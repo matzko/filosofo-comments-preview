@@ -8,7 +8,7 @@ Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
 
-/*  Copyright 2005  Austin Matzko  (email : if.website@gmail.com)
+/*  Copyright 2005  Austin Matzko  (email : if.website at gmail.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
