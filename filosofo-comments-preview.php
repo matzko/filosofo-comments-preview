@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.5.4e
+Version: 0.5.4f
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -959,8 +959,10 @@ if ($page == 'comments.php') {
 		<input type="hidden" name="filosofo_cp_post_permalink" id="filosofo_cp_post_permalink" value="<?php the_permalink() ?>" />
 		<input type="hidden" name="filosofo_cp_post_id" id="filosofo_cp_post_id" value="<?php the_ID() ?>" />
 		<input class="<?php echo $filosofo_cp_subpage_general_array['prev_button_class']; ?>" name="submit" id="<?php echo $filosofo_cp_subpage_general_array['prev_button_id']; ?>" type="submit" tabindex="5" value="<?php echo $filosofo_cp_subpage_general_array['prev_button_text']; ?>" /><?php 
-	} ?>
+	} 
+	if ($filosofo_cp_subpage_general_array['show_submit_button']) { ?>
 	<input class="<?php echo $filosofo_cp_subpage_general_array['submit_button_class']; ?>" name="submit" id="<?php echo $filosofo_cp_subpage_general_array['submit_button_id']; ?>" type="submit" tabindex="6" value="<?php echo $filosofo_cp_subpage_general_array['submit_button_text']; ?>" style="font-weight: bold;" /><?php
+	}
 }
 } //end filosofo_cp_submitbuttons
 }
