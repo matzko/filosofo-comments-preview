@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.5.4f
+Version: 0.5.4g
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -1007,13 +1007,13 @@ if ($filosofo_cp_captcha_array['show_captcha'] > 0) {
 	if (($filosofo_cp_captcha_array['show_captcha'] == 2) || ($page != false)) { ?>
 		<input type="hidden" name="filosofo_cp_captcha_number" id="filosofo_cp_captcha_number" value="<?php echo $number; ?>" />
 		<img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/filosofo-comments-preview.php?captcha_image=yes&amp;random_num=<?php echo $number; ?>" alt="<?php echo $filosofo_cp_captcha_array['captcha_label']; ?>" title="<?php echo $filosofo_cp_captcha_array['captcha_label']; ?>" />
-		<label for="<?echo $filosofo_cp_alerts_array['captcha_id']; ?>"><?php echo $filosofo_cp_captcha_array['captcha_label']; ?></label>
-		<input type="text" name="<?echo $filosofo_cp_alerts_array['captcha_id']; ?>" id="<?echo $filosofo_cp_alerts_array['captcha_id']; ?>" size="28" /><?php
+		<label for="<?php echo $filosofo_cp_alerts_array['captcha_id']; ?>"><?php echo $filosofo_cp_captcha_array['captcha_label']; ?></label>
+		<input type="text" name="<?php echo $filosofo_cp_alerts_array['captcha_id']; ?>" id="<?php echo $filosofo_cp_alerts_array['captcha_id']; ?>" size="28" /><?php
 	} //end if captcha should show up on every page
 	//elseif captcha should just show up the first time
 	elseif (!$page) {
 		?><input type="hidden" name="filosofo_cp_captcha_number" id="filosofo_cp_captcha_number" value="<?php echo $number; ?>" />
-		<input type="hidden" name="<?echo $filosofo_cp_alerts_array['captcha_id']; ?>" id="<?echo $filosofo_cp_alerts_array['captcha_id']; ?>" value="<?php echo filosofo_cp_captcha_process_number($number); ?>" /><?php
+		<input type="hidden" name="<?php echo $filosofo_cp_alerts_array['captcha_id']; ?>" id="<?php echo $filosofo_cp_alerts_array['captcha_id']; ?>" value="<?php echo filosofo_cp_captcha_process_number($number); ?>" /><?php
 	}
 } //end if captcha is set to be on
 } //end function filosofo_cp_display_captcha
@@ -1175,7 +1175,7 @@ $template = str_replace("%comment_type",'<?php comment_type(__(\'Comment\'), __(
 $template = str_replace("%previewed_author_link",'<?php if (empty($url)) :  echo $author; else: echo "<a href=\'$url\' rel=\'external\'>$author</a>"; endif; ?>',$template);
 $template = str_replace("%previewed_author",'<?php echo $author; ?>',$template);
 $template = str_replace("%previewed_buttons",$previewed_buttons,$template);
-$template = str_replace("%previewed_comment",'<?php echo $comment; ?>',$template);
+$template = str_replace("%previewed_comment",'<?php echo $fcp_comment; ?>',$template);
 $template = str_replace("%previewed_email",'<?php echo $email; ?>',$template);
 $template = str_replace("%previewed_form_submit_path",'<?php echo get_settings(\'siteurl\'); ?>/wp-content/plugins/filosofo-comments-preview.php',$template);
 $template = str_replace("%previewed_prev_comments",'<?php if ($filosofo_cp_subpage_general_array[\'comments_settings_show\'] == 1) { echo filosofo_cp_display_previous_comments(); } ?>',$template);
@@ -1383,7 +1383,7 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 	//if someone submits a preview
 	if($_POST['submit'] == $filosofo_cp_subpage_general_array['prev_button_text']){
 		$raw_comment = htmlspecialchars($comment_content);
-		$comment = filosofo_cp_filter_comment($comment_content);
+		$fcp_comment = filosofo_cp_filter_comment($comment_content);
 		//make logged in users show up in the preview
 		if ( $user_ID ) {
 			$author = $comment_author;
