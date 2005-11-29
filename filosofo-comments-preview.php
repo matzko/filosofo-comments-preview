@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.6
+Version: 0.6.5
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -289,7 +289,7 @@ global $filosofo_cp_version;
 
 
 //********************************************************************************
-function replace_comments_file () {
+function replace_comments_file ($comments_path) {
 // replaces the comments.php template values with the required ones
 // only works on versions of WP > 1.5, which have the 'comments_template' filter hook
 global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity;
@@ -311,21 +311,17 @@ global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user
 	endif;
 //end of make-up
 
-$comments_path = TEMPLATEPATH . '/comments.php';
 $comments_template = file_get_contents($comments_path);
-
 $comments_template = str_replace("/wp-comments-post.php","/wp-content/plugins/filosofo-comments-preview.php",$comments_template);
 
 //don't replace the input buttons if someone's already done it
-if(!preg_match('/filosofo_cp_submitbuttons/',$comments_template)) {
+if(!preg_match('/filosofo_cp_submitbuttons/',$comments_template)) 
 	$comments_template = preg_replace('/<input.*submit.*\/>/i','<?php $this->submitbuttons(\'plain\') ?>',$comments_template);
-}
+
 
 eval('?>' . $comments_template );
 
-$dummyreturn = __FILE__;
-return $dummyreturn;
-
+return __FILE__;
 }  //end function replace_comments_file
 
 
@@ -358,19 +354,14 @@ $comments_template = file_get_contents($popup_template);
 $comments_template = str_replace("/wp-comments-post.php","/wp-content/plugins/filosofo-comments-preview.php",$comments_template);
 
 //don't replace the input buttons if someone's already done it
-if(!preg_match('/filosofo_cp_submitbuttons/',$comments_template)) {
+if(!preg_match('/filosofo_cp_submitbuttons/',$comments_template))
 	$comments_template = preg_replace('/<input.*submit.*\/>/i','<?php $this->submitbuttons(\'popup\') ?>',$comments_template);
-}
-
-
 
 eval('?>' . $comments_template );
 }
 $this->evalonce = $this->evalonce + 1;
 
-$dummyreturn = __FILE__;
-return $dummyreturn;
-
+return __FILE__;
 }  //end function replace_popup_file
 
 
@@ -544,13 +535,13 @@ $current_tab[$selected_tab] = "class=\"current\"";
 <!--
 #adminmenu3 li {
 	display: inline;
-	line-height: 200%;
+	line-height: 100%;
 	list-style: none;
 	text-align: center;
 }
 
 #adminmenu3 {
-	background: #a3a3a3;
+	background: black;
 	border-top: 2px solid #707070;
 	border-bottom: none;
 	height: 21px;
@@ -576,10 +567,6 @@ $current_tab[$selected_tab] = "class=\"current\"";
 	color: #393939;
 }
                          
-#adminmenu3 li {
-	line-height: 170%;
-}
-
 .filosofo_cp_deletepost:hover {
 	background: #ce0000;
 	color: #fff;
@@ -1128,7 +1115,7 @@ if ($subpage_general_array['show_submit_button']) { ?>
 function captcha_process_number($number) {
 // passed a number, it returns an encoded number that will be used in the captcha image
 // args: number--the number to process into the displayed number
-// calls: filosofo_cp_get_option, 
+// calls: $this->get_option, 
 //*****************************************************************************
 $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 $datekey = date("F j");
@@ -1314,7 +1301,7 @@ $template = str_replace("%previewed_buttons",$previewed_buttons,$template);
 $template = str_replace("%previewed_comment",'<?php echo $fcp_comment; ?>',$template);
 $template = str_replace("%previewed_email",'<?php echo $email; ?>',$template);
 $template = str_replace("%previewed_form_submit_path",'<?php echo get_settings(\'siteurl\'); ?>/wp-content/plugins/filosofo-comments-preview.php',$template);
-$template = str_replace("%previewed_prev_comments",'<?php if ($subpage_general_array[\'comments_settings_show\'] == 1) { echo filosofo_cp_display_previous_comments(); } ?>',$template);
+$template = str_replace("%previewed_prev_comments",'<?php $subpage_general_array = $filosofo_cp_class->get_option(\'filosofo_cp_subpage_general_array\'); if ($subpage_general_array[\'comments_settings_show\'] == 1) { echo filosofo_cp_display_previous_comments(); } ?>',$template);
 $template = str_replace("%previewed_raw_comment",'<?php echo stripslashes($raw_comment); ?>',$template);
 $template = str_replace("%previewed_url",'<?php echo $url; ?>',$template);
 $template = str_replace("%userid",'<?php echo $comment->user_id; ?>',$template);
@@ -1325,76 +1312,14 @@ return $template;
 //***************************************************************
 function dirify($s) {
 // takes out problematic characters for URLs (or DB entries)
-// slightly adapted from http://kalsey.com/2004/07/dirify_in_php/
 //***************************************************************
-
- 	$HighASCII = array(
- 		"!\xc0!" => 'A',    # A`
- 		"!\xe0!" => 'a',    # a`
- 		"!\xc1!" => 'A',    # A'
- 		"!\xe1!" => 'a',    # a'
- 		"!\xc2!" => 'A',    # A^
- 		"!\xe2!" => 'a',    # a^
- 		"!\xc4!" => 'Ae',   # A:
- 		"!\xe4!" => 'ae',   # a:
- 		"!\xc3!" => 'A',    # A~
- 		"!\xe3!" => 'a',    # a~
- 		"!\xc8!" => 'E',    # E`
- 		"!\xe8!" => 'e',    # e`
- 		"!\xc9!" => 'E',    # E'
- 		"!\xe9!" => 'e',    # e'
- 		"!\xca!" => 'E',    # E^
- 		"!\xea!" => 'e',    # e^
- 		"!\xcb!" => 'Ee',   # E:
- 		"!\xeb!" => 'ee',   # e:
- 		"!\xcc!" => 'I',    # I`
- 		"!\xec!" => 'i',    # i`
- 		"!\xcd!" => 'I',    # I'
- 		"!\xed!" => 'i',    # i'
- 		"!\xce!" => 'I',    # I^
- 		"!\xee!" => 'i',    # i^
- 		"!\xcf!" => 'Ie',   # I:
- 		"!\xef!" => 'ie',   # i:
- 		"!\xd2!" => 'O',    # O`
- 		"!\xf2!" => 'o',    # o`
- 		"!\xd3!" => 'O',    # O'
- 		"!\xf3!" => 'o',    # o'
- 		"!\xd4!" => 'O',    # O^
- 		"!\xf4!" => 'o',    # o^
- 		"!\xd6!" => 'Oe',   # O:
- 		"!\xf6!" => 'oe',   # o:
- 		"!\xd5!" => 'O',    # O~
- 		"!\xf5!" => 'o',    # o~
- 		"!\xd8!" => 'Oe',   # O/
- 		"!\xf8!" => 'oe',   # o/
- 		"!\xd9!" => 'U',    # U`
- 		"!\xf9!" => 'u',    # u`
- 		"!\xda!" => 'U',    # U'
- 		"!\xfa!" => 'u',    # u'
- 		"!\xdb!" => 'U',    # U^
- 		"!\xfb!" => 'u',    # u^
- 		"!\xdc!" => 'Ue',   # U:
- 		"!\xfc!" => 'ue',   # u:
- 		"!\xc7!" => 'C',    # ,C
- 		"!\xe7!" => 'c',    # ,c
- 		"!\xd1!" => 'N',    # N~
- 		"!\xf1!" => 'n',    # n~
- 		"!\xdf!" => 'ss'
- 	);
- 	$find = array_keys($HighASCII);
- 	$replace = array_values($HighASCII);
- 	$s = preg_replace($find,$replace,$s);
-
-
-
-     //$s = convert_high_ascii($s);  ## convert high-ASCII chars to 7bit.
-     $s = strtolower($s);           ## lower-case.
-     $s = strip_tags($s);       ## remove HTML tags.
-     $s = preg_replace('!&[^;\s]+;!','',$s);         ## remove HTML entities.
-     $s = preg_replace('![^\w\s]!','',$s);           ## remove non-word/space chars.
-     $s = preg_replace('!\s+!','_',$s);               ## change space chars to underscores.
+     $s = sanitize_title($s); 			## take out weird characters		
+     $s = strtolower($s);           		## lower-case.
+     $s = strip_tags($s);       		## remove HTML tags.
+     $s = preg_replace('!&[^;\s]+;!','',$s);    ## remove HTML entities.
+     $s = preg_replace('![^\w\s]!','',$s);      ## remove non-word/space chars.
+     $s = preg_replace('!\s+!','_',$s); 	## change space chars to underscores.
      return $s;    
-
 } //end dirify
 
 
