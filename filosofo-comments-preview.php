@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.6.5
+Version: 0.6.6
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -311,7 +311,7 @@ global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user
 	endif;
 //end of make-up
 
-$comments_template = file_get_contents($comments_path);
+$comments_template = $this->get_the_files_content($comments_path);
 $comments_template = str_replace("/wp-comments-post.php","/wp-content/plugins/filosofo-comments-preview.php",$comments_template);
 
 //don't replace the input buttons if someone's already done it
@@ -349,7 +349,7 @@ if (1 == $this->evalonce) {
 	endif;
 //end of make-up
 
-$comments_template = file_get_contents($popup_template);
+$comments_template = $this->get_the_files_content($popup_template);
 
 $comments_template = str_replace("/wp-comments-post.php","/wp-content/plugins/filosofo-comments-preview.php",$comments_template);
 
@@ -1323,7 +1323,20 @@ function dirify($s) {
 } //end dirify
 
 
-
+//***************************************************************
+function get_the_files_content($comments_path) {
+//gets the file's content, even for PHP 4.2
+//***************************************************************
+$content = '';
+if (function_exists(file_get_contents)) 
+	$content = file_get_contents($comments_path);
+else {
+	$content_array = file($comments_path);
+	foreach ($content_array as $line)
+		$content .= $line; 
+} 
+return $content;
+} //end get_the_files_content
 
 
 
