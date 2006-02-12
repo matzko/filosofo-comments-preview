@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.6.6
+Version: 0.7
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -25,188 +25,33 @@ Author URI: http://www.ilfilosofo.com/blog/
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+define("FILOSOFOCPNAME", basename(__FILE__));
+
 // initialize functions
 if(!function_exists(get_settings)) {
-  require_once(realpath('../../wp-config.php'));
+	require_once(realpath('../../wp-config.php'));
 }
 
 //********************************************************************************
 // Default values
 //********************************************************************************
 
-
+$filosofo_cp_version = .70;
 
 $comments_template = <<<COMMENTSTEMPLATE
 <li class="%alt_class" id="comment-%comment_id">
- %comment_entire  
-<p><cite>%comment_type <?php _e('by'); ?> <a href="%comment_link">%comment_author</a> &#8212; %comment_date @ <a href="%comment_link">%comment_time</a></cite></p>
+%comment_entire  
+<p><cite>%comment_type <?php _e('by'); ?> <a href="%comment_link">%comment_author</a> &#8212; %comment_date @ <a 
+href="%comment_link">%comment_time</a></cite></p>
 </li>
 COMMENTSTEMPLATE;
 $comments_template = str_replace('$','\$',addslashes($comments_template));
 
-$filosofo_cp_preview_template_default = <<<TEMPLATEDEFAULT
-<?php get_header(); ?>
-
-<div id="content" class="widecolumn">
-<h2 id="comments">Your Comment Preview:</h2>
-
-  %previewed_comment<p>by %previewed_author_link</p>
-
-  <hr />
-  <form action="%previewed_form_submit_path" method="post" id="commentform">
-  <?php if ( \$user_ID ) : ?>
-  <p>Logged in as <a href="<?php echo get_option('siteurl'); ?>/wp-admin/profile.php"><?php echo \$user_identity; ?></a>. <a href="<?php echo get_option('siteurl'); ?>/wp-login.php?action=logout" title="<?php _e('Log out of this account') ?>">Logout &raquo;</a></p>
-  <?php else : ?>
-  <p>
-  <input type="text" name="author" id="author" class="textarea" value="%previewed_author" size="28" tabindex="1" />
-  <label for="author"><?php _e('Name'); ?></label>
-  </p>
-  <p>
-  <input type="text" name="email" id="email" value="%previewed_email" size="28" tabindex="2" />
-  <label for="email"><?php _e('E-mail'); ?></label>
-  </p>
-  <p>
-  <input type="text" name="url" id="url" value="%previewed_url" size="28" tabindex="3" />
-  <label for="url"><?php _e('<acronym title="Uniform Resource Identifier">URI</acronym>'); ?></label>
-  </p>
-  <?php endif; ?>
-  <p>
-  <label for="comment"><?php _e('Your Comment'); ?></label>
-  <br />
-  <textarea name="comment" id="comment" cols="60" rows="10" tabindex="4">%previewed_raw_comment</textarea>
-  </p>
-  <p>
-   %previewed_buttons
-  </p>
-  </form>
-      %previewed_prev_comments
-  </div>  
-  <?php get_footer();
-TEMPLATEDEFAULT;
-
-$filosofo_cp_preview_template_classic = <<<TEMPLATECLASSIC
-<?php get_header(); ?>
-
-
-<h2 id="comments">Your Comment Preview:</h2>
-
-  %previewed_comment<p>by %previewed_author_link</p>
-
-  <hr />
-  <form action="%previewed_form_submit_path" method="post" id="commentform">
-  <?php if ( \$user_ID ) : ?>
-  <p>Logged in as <a href="<?php echo get_option('siteurl'); ?>/wp-admin/profile.php"><?php echo \$user_identity; ?></a>. <a href="<?php echo get_option('siteurl'); ?>/wp-login.php?action=logout" title="<?php _e('Log out of this account') ?>">Logout &raquo;</a></p>
-  <?php else : ?>
-  <p>
-  <input type="text" name="author" id="author" class="textarea" value="%previewed_author" size="28" tabindex="1" />
-  <label for="author"><?php _e('Name'); ?></label>
-  </p>
-  <p>
-  <input type="text" name="email" id="email" value="%previewed_email" size="28" tabindex="2" />
-  <label for="email"><?php _e('E-mail'); ?></label>
-  </p>
-  <p>
-  <input type="text" name="url" id="url" value="%previewed_url" size="28" tabindex="3" />
-  <label for="url"><?php _e('<acronym title="Uniform Resource Identifier">URI</acronym>'); ?></label>
-  </p>
-  <?php endif; ?>
-  <p>
-  <label for="comment"><?php _e('Your Comment'); ?></label>
-  <br />
-  <textarea name="comment" id="comment" cols="60" rows="10" tabindex="4">%previewed_raw_comment</textarea>
-  </p>
-  <p>
-   %previewed_buttons
-  </p>
-  </form>
-      %previewed_prev_comments
-  </div>  
-  <?php get_footer();			
-TEMPLATECLASSIC;
-
-$filosofo_cp_preview_pop_up_template_classic = <<<TEMPLATE_POP_UP_CLASSIC
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-     <title><?php echo get_settings('blogname'); ?> - <?php echo sprintf(__("Comments on %s"), the_title('','',false)); ?></title>
-
-	<meta http-equiv="Content-Type" content="<?php bloginfo('html_type'); ?>; charset=<?php echo get_settings('blog_charset'); ?>" />
-	<style type="text/css" media="screen">
-		@import url( <?php bloginfo('stylesheet_url'); ?> );
-		body { margin: 3px; }
-	</style>
-
-</head>
-<body id="commentspopup">
-
-<h1 id="header"><a href="" title="<?php echo get_settings('blogname'); ?>"><?php echo get_settings('blogname'); ?></a></h1>
-
-<p><a href="<?php echo get_settings('siteurl'); ?>/wp-commentsrss2.php?p=<?php echo \$post->ID; ?>"><?php _e("<abbr title=\"Really Simple Syndication\">RSS</abbr> feed for comments on this post."); ?></a></p>
-
-<h2 id="comments">Your Comment Preview:</h2>
-
-  %previewed_comment<p>by %previewed_author_link</p>
-
-  <hr />
-  <form action="%previewed_form_submit_path" method="post" id="commentform">
-  <?php if ( \$user_ID ) : ?>
-  <p>Logged in as <a href="<?php echo get_option('siteurl'); ?>/wp-admin/profile.php"><?php echo \$user_identity; ?></a>. <a href="<?php echo get_option('siteurl'); ?>/wp-login.php?action=logout" title="<?php _e('Log out of this account') ?>">Logout &raquo;</a></p>
-  <?php else : ?>
-  <p>
-  <input type="text" name="author" id="author" class="textarea" value="%previewed_author" size="28" tabindex="1" />
-  <label for="author"><?php _e('Name'); ?></label>
-  </p>
-  <p>
-  <input type="text" name="email" id="email" value="%previewed_email" size="28" tabindex="2" />
-  <label for="email"><?php _e('E-mail'); ?></label>
-  </p>
-  <p>
-  <input type="text" name="url" id="url" value="%previewed_url" size="28" tabindex="3" />
-  <label for="url"><?php _e('<acronym title="Uniform Resource Identifier">URI</acronym>'); ?></label>
-  </p>
-  <?php endif; ?>
-  <p>
-  <label for="comment"><?php _e('Your Comment'); ?></label>
-  <br />
-  <textarea name="comment" id="comment" cols="60" rows="10" tabindex="4">%previewed_raw_comment</textarea>
-  </p>
-  <p>
-   %previewed_buttons
-  </p>
-  </form>
-      %previewed_prev_comments
-  </div>  
-
-
-<div><strong><a href="javascript:window.close()"><?php _e("Close this window."); ?></a></strong></div>
-
-
-<!-- // this is just the end of the motor - don't touch that line either :) -->
-<?php //} ?> 
-<p class="credit"><?php timer_stop(1); ?> <?php echo sprintf(__("<cite>Powered by <a href=\"http://wordpress.org\" title=\"%s\"><strong>Wordpress</strong></a></cite>"),__("Powered by WordPress, state-of-the-art semantic personal publishing platform.")); ?></p>
-<?php // Seen at http://www.mijnkopthee.nl/log2/archive/2003/05/28/esc(18) ?>
-<script type="text/javascript">
-<!--
-document.onkeypress = function esc(e) {	
-	if(typeof(e) == "undefined") { e=event; }
-	if (e.keyCode == 27) { self.close(); }
-}
-// -->
-</script>
-</body>
-</html>
-TEMPLATE_POP_UP_CLASSIC;
-
-
-
-$filosofo_cp_version = .6;
-
-$filosofo_cp_preview_template_default = str_replace('$','\$',addslashes($filosofo_cp_preview_template_default));
-
-$filosofo_cp_preview_template_classic = str_replace('$','\$',addslashes($filosofo_cp_preview_template_classic));
-
-$filosofo_cp_preview_pop_up_template_classic = str_replace('$','\$',addslashes($filosofo_cp_preview_pop_up_template_classic));
-
+if(get_settings('date_format')) $date_format = get_settings('date_format');
+else $date_format = 'F j, Y';
+if(get_settings('time_format')) $time_format = get_settings('time_format');
+else $time_format = 'g:i a';
+$comment_type = '\'' . __('Comment') . '\',\'' .  __('Trackback') . '\',\'' .  __('Pingback') . '\'';
 
 $filosofo_cp_subpage_general_array_default = array('show_prev_button' => 1,
 	'show_submit_button' => 1,
@@ -220,6 +65,7 @@ $filosofo_cp_subpage_general_array_default = array('show_prev_button' => 1,
 	'comments_settings_reverse' => 1,
 	'comments_settings_time_format' => $time_format,
 	'comments_settings_date_format' => $date_format,
+	'comments_settings_comment_type' => $comment_type,
 	'comments_settings_oddcomment_class' => 'alt',
 	'comments_settings_evencomment_class' => 'altB',
 	'comments_header' => '<h3>Previous Comments</h3><ul class="commentlist" id="commentlist">',
@@ -241,12 +87,17 @@ $filosofo_cp_alerts_array_default = array('activate' => 0,
 $salt = 'filosofo_cp' . rand();
 $filosofo_cp_captcha_array_default = array('show_captcha' => 0,
 	'captcha_label' => 'Enter the code that you see in the image',
-     'salt' => $salt,
+	'salt' => $salt,
 	'num_length' => 6,
 	'circles' => 5,
 	'lines' => 1,
 	'width' => 100,
 	'height' => 40,
+	'x_ord' => 20,
+	'y_ord' => 10,
+	'use_font' => 0,
+	'font_path' => dirname(__FILE__),
+	'angle' => 0,
 	'font' => 5,
 	'bgred' => 10,
 	'bggreen' => 102,
@@ -260,13 +111,7 @@ $filosofo_cp_captcha_array_default = array('show_captcha' => 0,
 
 $filosofo_cp_default_options = array('filosofo_cp_subpage_general_array' => $filosofo_cp_subpage_general_array_default,
 	'filosofo_cp_alerts_array' => $filosofo_cp_alerts_array_default,
-	'filosofo_cp_captcha_array' => $filosofo_cp_captcha_array_default,
-	'filosofo_cp_preview_template' => $filosofo_cp_preview_template_default,
-	'filosofo_cp_preview_template_default' => $filosofo_cp_preview_template_default,
-	'filosofo_cp_preview_template_classic' => $filosofo_cp_preview_template_classic,
-	'filosofo_cp_preview_pop_up_template_default' => $filosofo_cp_preview_pop_up_template_classic,
-	'filosofo_cp_preview_pop_up_template_classic' => $filosofo_cp_preview_pop_up_template_classic,
-	'filosofo_cp_preview_pop_up_template' => $filosofo_cp_preview_pop_up_template_classic);
+	'filosofo_cp_captcha_array' => $filosofo_cp_captcha_array_default);
 //********************************************************************************
 // end default values
 //********************************************************************************
@@ -275,27 +120,97 @@ $filosofo_cp_default_options = array('filosofo_cp_subpage_general_array' => $fil
 if (!class_exists('filosofo_cp')) {
 class filosofo_cp {
 
-
-
-//********************************************************************************
 function upgrade () {
 global $filosofo_cp_version;
 	update_option('filosofo_cp_version',$filosofo_cp_version);
 } //end upgrade
 
+function create_template($kind = 'standard') {
+	if ('popup' == $kind) {
+		$template_text = $this->get_the_files_content( TEMPLATEPATH . '/comments-popup.php');
+		if ('' == $template_text)
+			$template_text = $this->get_the_files_content( ABSPATH . '/wp-content/themes/default/comments-popup.php');
+	}
+	else $template_text = $this->get_the_files_content( TEMPLATEPATH . '/index.php');
 
+	$head_pos = strpos($template_text,'get_header(');
+	$body_pos = strpos($template_text,'<body');
+	$foot_pos = strpos($template_text,'get_footer(');
+	$body_end_pos = strpos($template_text,'</body');
 
+	if ($head_pos > $body_pos) 
+		$header = substr($template_text,0,$head_pos) . 'get_header(); ?>';
+	else
+		$header = substr($template_text,0,$body_pos) . '<body>';
+
+	if ($foot_pos && (($foot_pos < $body_end_pos) || !$body_end_pos))
+        	$footer = '<?php ' . substr($template_text,-(strlen($template_text)-$foot_pos));
+	elseif ($body_end_pos)
+        	$footer = substr($template_text,-(strlen($template_text)-$body_end_pos));
+
+	if ('popup' == $kind) {
+		$divs[1] = <<<TEMPLATE_POP_UP
+
+<div><strong><a href="javascript:window.close()"><?php _e("Close this window."); ?></a></strong></div>
+
+<!-- // this is just the end of the motor - don't touch that line either :) -->
+<?php } ?>
+<p class="credit"><?php timer_stop(1); ?>
+<?php echo sprintf(__("<cite>Powered by <a href=\"http://wordpress.org\"title=\"%s\"><strong>Wordpress</strong></a></cite>"),__("Powered by WordPress,  state-of-the-art semantic personal publishing platform.")); ?></p>
+<?php // Seen at http://www.mijnkopthee.nl/log2/archive/2003/05/28/esc(18) ?>
+<script type="text/javascript">
+<!--
+document.onkeypress = function esc(e) {
+        if(typeof(e) == "undefined") { e=event; }
+        if (e.keyCode == 27) { self.close(); }
+}
+// -->
+</script>
+TEMPLATE_POP_UP;
+
+	}
+	else {
+		$div_attribs = array('id="wrapper"','id="pagecontent"','id="main"','id="content"','class="post"','class="widecolumn"');
+		foreach ($div_attribs as $text) {
+			if (!strpos($header,$text)) { 
+				$divs[0] = $divs[0] . '<div ' . $text . '>';
+				$divs[1] = $divs[1] . '</div>';
+			} 
+		}
+	}
+	$main_template = <<<TEMPLATE
+<h2 id="comments">Your Comment Preview on %previewed_post_title:</h2>
+%previewed_comment<p>by %previewed_author_link</p>
+<hr />
+<form action="%previewed_form_submit_path" method="post" id="commentform">
+<?php if ( \$user_ID ) : ?>
+<p>Logged in as <a href="<?php echo get_option('siteurl');  ?>/wp-admin/profile.php"><?php echo \$user_identity;?></a>. <a href="<?php echo get_option('siteurl'); ?>/wp-login.php?action=logout"  title="<?php _e('Log out of this account') ?>">Logout &raquo;</a></p>
+<?php else : ?>
+<p><input type="text" name="author" id="author" class="textarea" value="%previewed_author" size="28" tabindex="1" />
+<label for="author"><?php _e('Name'); ?></label></p>
+<p><input type="text" name="email" id="email" value="%previewed_email" size="28" tabindex="2" />
+<label for="email"><?php _e('E-mail'); ?></label></p>
+<p><input type="text" name="url" id="url" value="%previewed_url" size="28" tabindex="3" />
+<label for="url"><?php _e('<acronym title="Uniform Resource Identifier">URI</acronym>'); ?></label></p>
+<?php endif; ?>
+<p><label for="comment"><?php _e('Your Comment'); ?></label><br />
+<textarea name="comment" id="comment" cols="60" rows="10" tabindex="4">%previewed_raw_comment</textarea></p>
+<p>%previewed_buttons</p>
+</form>
+%previewed_prev_comments
+TEMPLATE;
+
+return $header . $divs[0] . $main_template . $divs[1] . $footer;
+}
 
 
 
 //********************************************************************************
-function replace_comments_file ($comments_path) {
-// replaces the comments.php template values with the required ones
-// only works on versions of WP > 1.5, which have the 'comments_template' filter hook
+function replace_comments_file ($comments_path) { // replaces the comments.php template values with the required ones
+// works only on versions of WP > 1.5, which have the 'comments_template' filter hook
 global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity;
-//********************************************************************************
 
-//make up for variables that aren't passed and aren't global
+	//make up for variables that aren't passed and aren't global
 	if ( is_single() || is_page() || $withcomments ) :
 		$req = get_settings('require_name_email');
 		$comment_author = isset($_COOKIE['comment_author_'.COOKIEHASH]) ? trim(stripslashes($_COOKIE['comment_author_'.COOKIEHASH])) : '';
@@ -309,31 +224,27 @@ global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user
 		$comments = $wpdb->get_results("SELECT * FROM $wpdb->comments WHERE comment_post_ID = '$post->ID' AND ( comment_approved = '1' OR ( comment_author = '$author_db' AND comment_author_email = '$email_db' AND comment_approved = '0' ) ) ORDER BY comment_date");
 	}
 	endif;
-//end of make-up
+	//end of make-up
 
-$comments_template = $this->get_the_files_content($comments_path);
-$comments_template = str_replace("/wp-comments-post.php","/wp-content/plugins/filosofo-comments-preview.php",$comments_template);
+	$comments_template = $this->get_the_files_content($comments_path);
+	$comments_template = str_replace("/wp-comments-post.php","/wp-content/plugins/" . FILOSOFOCPNAME,$comments_template);
 
-//don't replace the input buttons if someone's already done it
-if(!preg_match('/filosofo_cp_submitbuttons/',$comments_template)) 
-	$comments_template = preg_replace('/<input.*submit.*\/>/i','<?php $this->submitbuttons(\'plain\') ?>',$comments_template);
+	//don't replace the input buttons if someone's already done it
+	if(!preg_match('/filosofo_cp_submitbuttons/',$comments_template)) 
+		$comments_template = preg_replace('/<input.*submit.*\/>/i','<?php $this->submitbuttons(\'standard\') ?>',$comments_template);
 
 
-eval('?>' . $comments_template );
+	eval('?>' . $comments_template );
 
-return __FILE__;
+	return __FILE__;
 }  //end function replace_comments_file
 
-
 var $evalonce = 0;
-
 //********************************************************************************
-function replace_popup_file ($popup_template) {
-// replaces the popup form values with the required ones
+function replace_popup_file ($popup_template) {// replaces the popup form values with the required ones
 global $wp_query, $withcomments, $post, $posts, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity;
 if (1 == $this->evalonce) {
-//********************************************************************************
-//make up for variables that aren't passed and aren't global
+	//make up for variables that aren't passed and aren't global
 	if ( is_single() || is_page() || $withcomments ) :
 		$req = get_settings('require_name_email');
 		$comment_author = isset($_COOKIE['comment_author_'.COOKIEHASH]) ? trim(stripslashes($_COOKIE['comment_author_'.COOKIEHASH])) : '';
@@ -347,189 +258,147 @@ if (1 == $this->evalonce) {
 		$comments = $wpdb->get_results("SELECT * FROM $wpdb->comments WHERE comment_post_ID = '$post->ID' AND ( comment_approved = '1' OR ( comment_author = '$author_db' AND comment_author_email = '$email_db' AND comment_approved = '0' ) ) ORDER BY comment_date");
 	}
 	endif;
-//end of make-up
+	//end of make-up
 
-$comments_template = $this->get_the_files_content($popup_template);
-
-$comments_template = str_replace("/wp-comments-post.php","/wp-content/plugins/filosofo-comments-preview.php",$comments_template);
-
-//don't replace the input buttons if someone's already done it
-if(!preg_match('/filosofo_cp_submitbuttons/',$comments_template))
-	$comments_template = preg_replace('/<input.*submit.*\/>/i','<?php $this->submitbuttons(\'popup\') ?>',$comments_template);
-
-eval('?>' . $comments_template );
+	$comments_template = $this->get_the_files_content($popup_template);
+	$comments_template = str_replace("/wp-comments-post.php","/wp-content/plugins/" . FILOSOFOCPNAME,$comments_template);
+	
+	//don't replace the input buttons if someone's already done it
+	if(!preg_match('/filosofo_cp_submitbuttons/',$comments_template))
+		$comments_template = preg_replace('/<input.*submit.*\/>/i','<?php $this->submitbuttons(\'popup\') ?>',$comments_template);
+	eval('?>' . $comments_template );
 }
 $this->evalonce = $this->evalonce + 1;
-
-return __FILE__;
+	return __FILE__;
 }  //end function replace_popup_file
-
-
 
 //********************************************************************************
 // options page stuff
 //********************************************************************************
 var $options = array();
 
-
-
 //********************************************************************************
-function get_option($option) {
-// Looks up the setting for the name of the $option argument;  if it's not there it uses the default
+function get_option($option) { // Looks up the setting for the name of the $option argument;  if it's not there it uses the default
 // calls: add_option, update_option, get_option
 global $filosofo_cp_default_options;
-//********************************************************************************
-$orig_option = $option;
-//set filosofo_cp_preview_template option to be specific to the current stylesheet 
-if($option == 'filosofo_cp_preview_template') {
-	$option = $option . '_' . $this->dirify(get_option('stylesheet'));
-}
-//set filosofo_cp_preview_pop_up_template option to be specific to the current stylesheet
-elseif($option == 'filosofo_cp_preview_pop_up_template') {
-	$option = $option . '_' . $this->dirify(get_option('stylesheet'));
-}
 
-//check to see if the value has not already been loaded into the options array
-if (!array_key_exists($option, $this->options)) {
-	//if the option doesn't exist yet in the db, then use default
-	if (!get_option($option)) {  //warning: for options with value 0 it returns false, hence always the default!
-		//special case of the variously named templates
-		if (preg_match('/^filosofo_cp_preview_template/',$option)) {
-			//if there's not a default set for that template
-			if (!array_key_exists($option, $filosofo_cp_default_options)) {
-				$filosofo_cp_default_options[$option] = $filosofo_cp_default_options['filosofo_cp_preview_template']; 
+	$orig_option = $option;
+	//set filosofo_cp_preview_template option to be specific to the current stylesheet 
+	if($option == 'filosofo_cp_preview_template') { 
+		$option = $option . '_' . $this->dirify(get_option('stylesheet'));
+	}
+	//set filosofo_cp_preview_pop_up_template option to be specific to the current stylesheet
+	elseif($option == 'filosofo_cp_preview_pop_up_template') {
+		$option = $option . '_' . $this->dirify(get_option('stylesheet'));
+	}
+
+	//check to see if the value has not already been loaded into the options array
+	if (!array_key_exists($option, $this->options)) {
+		//if the option doesn't exist yet in the db, then use default
+		if (!get_option($option)) {  //warning: for options with value 0 it returns false, hence always the default!
+			//special case of the variously named templates
+			if ((preg_match('/^filosofo_cp_preview_template/',$option)) || (preg_match('/^filosofo_cp_preview_pop_up_template/',$option))) {
+				if (preg_match('/^filosofo_cp_preview_pop_up_template/',$option))
+					$kind = 'popup';
+				else $kind = 'standard';
+				//if there's not a default set for that template
+				if (!array_key_exists($option, $filosofo_cp_default_options)) {
+					$filosofo_cp_default_options[$option] = str_replace('$','\$',addslashes($this->create_template($kind))); 
+				}
+				//add it to the db and the options array
+				add_option($option,$filosofo_cp_default_options[$option]);
+				$this->options[$option] =  $filosofo_cp_default_options[$option];
 			}
-			//add it to the db and the options array
-			add_option($option,$filosofo_cp_default_options[$option]);
-			$this->options[$option] =  $filosofo_cp_default_options[$option];
-		}
-		elseif (preg_match('/^filosofo_cp_preview_pop_up_template/',$option)) {
-			//if there's not a default set for that template
-			if (!array_key_exists($option, $filosofo_cp_default_options)) {
-				$filosofo_cp_default_options[$option] = $filosofo_cp_default_options['filosofo_cp_preview_pop_up_template'];
+			//not dealing with a preview template
+			else {    
+				add_option($option,$filosofo_cp_default_options[$orig_option]);
+				$this->options[$option] =  $filosofo_cp_default_options[$orig_option];
 			}
-			//add it to the db and the options array
-			add_option($option,$filosofo_cp_default_options[$option]);
-			$this->options[$option] =  $filosofo_cp_default_options[$option];
-		}
-		//not dealing with a preview template
-		else {    
-			add_option($option,$filosofo_cp_default_options[$orig_option]);
-			$this->options[$option] =  $filosofo_cp_default_options[$orig_option];
+		} 
+		//else pull it from the database
+		else {
+			$this->options[$option] =  get_option($option);
 		}
 	} 
-	//else pull it from the database
-	else {
-		$this->options[$option] =  get_option($option);
-	}
-} 
-return $this->options[$option];
+	return $this->options[$option];
 } //end get_option
 
-
-
 //**********************************************************************
-function add_options_page() { 
-// adds the plugin options page to the admin options menu
-// calls: add_options_page
+function add_options_page() { // adds the plugin options page to the admin options menu
 global $wp_version;
-//**********************************************************************
-if (function_exists('add_options_page')) {
-	add_options_page('Filosofo Comments Preview Plugin', 'Comments Preview', 6, __FILE__,array(&$this,'options_page'));
-	
-} 
-
-
+	if (function_exists('add_options_page'))
+		add_options_page('Filosofo Comments Preview Plugin', 'Comments Preview', 6, __FILE__,array(&$this,'options_page'));
 } //end add_options_page
 
-
-
 //*********************************************************************
-function options_page() {
-// configures the Filosofo Comments Preview admin options page
-// calls subpage_header, subpage_general, subpage_preview_template, subpage_captcha, subpage_alerts, update_option, 
+function options_page() { // configures the Filosofo Comments Preview admin options page
 global $filosofo_cp_default_options;
-//*********************************************************************
-//if the form has been submitted to be updated
-if (isset($_GET['updated']) && ($_GET['updated'] == 'true')) {
-	$possible_options = array_keys($_POST);
-	//if the options are part of an array
-	if (isset($_GET['array'])) {
-		foreach($possible_options as $option) {
-			$temparray[$option] = trim($_POST[$option]);
-		}
-		//if the reset button was pushed
-		if (!empty($_POST['reset'])) {
-			$this->options[$_GET['array']] =  $filosofo_cp_default_options[$_GET['array']];
-			update_option($_GET['array'],$filosofo_cp_default_options[$_GET['array']]);
-		}
-		else {
-			$this->options[$_GET['array']] =  $temparray;
-			update_option($_GET['array'],$temparray);
-		}
-	}
-	//else the options are not part of an array
-	else {
-		foreach($possible_options as $option) {
-			$option = trim($option);
+	//if the form has been submitted to be updated
+	if (isset($_GET['updated']) && ($_GET['updated'] == 'true')) {
+		$possible_options = array_keys($_POST);
+		//if the options are part of an array
+		if (isset($_GET['array'])) {
+			foreach($possible_options as $option) {
+				$temparray[$option] = trim($_POST[$option]);
+				if (('rperc' == $option) || ('gperc' == $option) || ('bperc' == $option)) 
+					$temparray[$option] = $temparray[$option]/100;
+			}
 			//if the reset button was pushed
 			if (!empty($_POST['reset'])) {
-				//if a template
-				if (preg_match('/^filosofo_cp_preview_template/',$option)) {
-					//if there's not a default set for that template
-					if (!array_key_exists($option, $filosofo_cp_default_options)) {
-						$this->options[$option] = $filosofo_cp_default_options['filosofo_cp_preview_template'];
-					}
-					else {
-						$this->options[$option] = $filosofo_cp_default_options[$option];
-					}
-				}
-				//if a pop up template
-				elseif (preg_match('/^filosofo_cp_preview_pop_up_template/',$option)) {
-					//if there's not a default set for that template
-					if (!array_key_exists($option, $filosofo_cp_default_options)) {
-						$this->options[$option] = $filosofo_cp_default_options['filosofo_cp_preview_pop_up_template'];
-					}
-					else {
-						$this->options[$option] = $filosofo_cp_default_options[$option];
-					}
-				}
-				update_option($option,$this->options[$option]);
+				$this->options[$_GET['array']] =  $filosofo_cp_default_options[$_GET['array']];
+				update_option($_GET['array'],$filosofo_cp_default_options[$_GET['array']]);
 			}
 			else {
-				$this->options[$option] =  $_POST[$option];
-				update_option($option,$_POST[$option]);
+				$this->options[$_GET['array']] =  $temparray;
+				update_option($_GET['array'],$temparray);
 			}
 		}
-	}  //end else options not part of an array
-}
+		//else the options are not part of an array
+		else {
+			foreach($possible_options as $option) {
+				$option = trim($option);
+				//if the reset button was pushed
+				if (!empty($_POST['reset'])) {
+					//if a template
+					if ((preg_match('/^filosofo_cp_preview_template/',$option)) || (preg_match('/^filosofo_cp_preview_pop_up_template/',$option))) {
+						if (preg_match('/^filosofo_cp_preview_pop_up_template/',$option))
+							$kind = 'popup';
+						else $kind = 'standard';
+						//if there's not a default set for that template
+						if (!array_key_exists($option, $filosofo_cp_default_options))
+							$this->options[$option] = str_replace('$','\$',addslashes($this->create_template($kind))); 
+						else
+							$this->options[$option] = $filosofo_cp_default_options[$option];
+					}
+					update_option($option,$this->options[$option]);
+				}
+				else {
+					$_POST[$option] = trim($_POST[$option]);
+					$this->options[$option] =  $_POST[$option];
+					update_option($option,$_POST[$option]);
+				}
+			}
+		}  //end else options not part of an array
+	}
 
-$subpage = 1;
-if (isset($_GET['subpage'])) {
-	$subpage = $_GET['subpage'];
-}
-$this->subpage_header($subpage);
-if ($subpage == 1) {
-	$this->subpage_general(); 
-} 
-elseif ($subpage == 2) {
-	$this->subpage_preview_template();
-} 
-elseif ($subpage == 3) {
-	$this->subpage_captcha();
-} 
-elseif ($subpage == 4) {
-	$this->subpage_alerts();
-}
+	$subpage = 1;
+	if (isset($_GET['subpage']))
+		$subpage = $_GET['subpage'];
+	$this->subpage_header($subpage);
+	if ($subpage == 1)
+		$this->subpage_general(); 
+	elseif ($subpage == 2)
+		$this->subpage_preview_template();
+	elseif ($subpage == 3)
+		$this->subpage_captcha();
+	elseif ($subpage == 4)
+		$this->subpage_alerts();
 } //end options_page function
 
-
-
 //***********************************************************************************
-function subpage_header ($selected_tab) {
-// prints the header for the admin options pages
-//***********************************************************************************
+function subpage_header ($selected_tab) { // prints the header for the admin options pages
 $current_tab[$selected_tab] = "class=\"current\"";
+$captcha_array = $this->get_option('filosofo_cp_captcha_array');
 ?>
 <style>
 <!--
@@ -580,31 +449,264 @@ textarea.filosofo_cp_edittext  {
 	font: small 'Courier New', Courier, monospace;
 	width: 99%;
 }
+
+<?php 
+if (3 == $selected_tab) {
+?>
+div.slidercasing {
+	margin: 2px;
+	padding: 0px;
+	border: 2px solid;
+        border-bottom-color: black;
+        border-top-color: #999999;
+        border-left-color: #757575;
+        border-right-color: #545454;
+	background-color:#DDDDDD;
+	width: 280px;
+	z-index:4;
+	-moz-border-radius: 4px;
+}
+
+div.slidertrack {
+	border:1px solid #000000;
+	background-color:#FFFFFF;
+	z-index:5;
+	padding: 1px;
+	margin: 1px;
+	-moz-border-radius: 2px;
+}
+
+div.sliderbar {
+	position:absolute;
+	z-index:6;
+	border-bottom-color: black;
+	border-top-color: #999999;
+	border-left-color: #757575;
+	border-right-color: #545454; 
+        border-style: solid;
+        border-width: 2px;
+	background-color: #5E5E5E;
+	width:25px;		
+	padding:0px;
+	height:10px;
+	cursor: pointer;
+	-moz-border-radius: 9px;
+}
+
+div.shader {
+	height:7px; 
+	width: 22px;
+	background-color: #5E5E5E; 
+	-moz-border-radius: 7px; 
+	margin-top: 1px;
+	margin-left: 2px;
+}
+
+
+<?php } ?>
+
 -->
 </style>
+
+<?php
+if (3 == $selected_tab) {
+?>
+
+<script language="JavaScript" type="text/javascript">
+//<![CDATA[
+function findPosX(obj) {
+	var curleft = 0;
+	if (obj.offsetParent) {
+		while (obj.offsetParent) {
+			curleft += obj.offsetLeft;
+			obj = obj.offsetParent;
+		}
+	}
+	else if (obj.x)
+		curleft += obj.x;
+	return curleft;
+}
+
+function findPosY(obj) {
+	var curtop = 0;
+	if (obj.offsetParent) {
+		while (obj.offsetParent) {
+			curtop += obj.offsetTop;
+			obj = obj.offsetParent;
+		}
+	}
+	else if (obj.y)
+	curtop += obj.y;
+	return curtop;
+}
+
+function filosofo_cp_addEvent(obj, evType, fn){
+// from http://www.sitepoint.com/article/structural-markup-javascript
+if (obj.addEventListener){
+   obj.addEventListener(evType, fn, false); //false to make sure it happens during event bubbling, not capturing.  
+   return true;
+ } else if (obj.attachEvent){
+   var r = obj.attachEvent("on"+evType, fn);
+   return r;
+ } else {
+   return false;
+ }
+}
+
+function slider(slider_name,casing_name,formfield_name,width,field_max) {
+	var casing = document.getElementById(casing_name);
+	var formfield  = document.getElementById(formfield_name);
+	formfield.origvalue = formfield.value;
+	var currentslider = document.getElementById(slider_name);
+	if ((0 == width) || (0 == field_max)) var ratio = 1; else var ratio = field_max/width || 1;
+	if (!currentslider || !casing || !formfield) return;
+
+	var rangeMin = findPosX(casing);
+	var rangeMax = findPosX(casing) + width;
+	var tempX = 0;
+	var posX = 0;
+	var adjuststate = 0;
+	var tempA = 0;
+	var tempB = 0;
+	var offsetPosX = 0;
+	var mouseoffset = 0;
+	
+	currentslider.style.top = findPosY(casing)-2 + 'px';
+	currentslider.style.left = findPosX(casing)*1 + parseInt((formfield.value*1)/ratio) + 'px';
+
+	this.cap = function () {		
+		if (adjuststate == 0) { 
+			adjuststate = 1; 
+			tempA = posX; 
+		} else { 
+			adjuststate = 0;
+		}
+	}
+
+	this.mouse = function(e) {
+		if(navigator.appName == "Netscape"){
+			tempX = e.pageX;
+		} else {
+			tempX = window.event.clientX + window.document.body.scrollLeft;
+		}
+		if (tempX <= 0) {tempX = 0} 
+		posX = tempX
+	
+		if (adjuststate == 1){ 	// we need to move the slider
+			// having moved we have the captured frozen point.
+			tempB = tempA;
+			tempA = posX;
+
+			// work out the mouse in relation to the topos
+			mouseoffset = tempB - findPosX(currentslider);
+			offsetPosX = posX - mouseoffset;
+		
+			if (offsetPosX < rangeMin){
+                       		offsetPosX = rangeMin;
+                	}
+			if (offsetPosX > rangeMax){
+                        	offsetPosX = rangeMax;
+                	}
+			currentslider.style.left = offsetPosX + 'px';
+			formfield.value = parseInt((offsetPosX-rangeMin)*ratio);	
+			formfield.selectedIndex = parseInt((offsetPosX-rangeMin)*ratio);
+		}
+		return true
+	}
+	filosofo_cp_addEvent(currentslider,'mousedown',this.cap);
+	filosofo_cp_addEvent(document, 'mouseup',function () { adjuststate = 0; });
+	filosofo_cp_addEvent(document, 'mousemove',this.mouse);
+	filosofo_cp_addEvent(formfield, 'change',function () { 
+		var position = rangeMin*1 + parseInt((formfield.value*1)/ratio);
+		if (rangeMax < position) position = rangeMax;
+		if (rangeMin > position) position = rangeMin;
+		currentslider.style.left = position + 'px';
+	});
+	if (document.getElementById('captcha_settings_form')) {
+		var captcha_form = document.getElementById('captcha_settings_form');
+		        filosofo_cp_addEvent(captcha_form, 'reset',function () {
+		                var position = rangeMin*1 + parseInt((formfield.origvalue*1)/ratio);
+                		if (rangeMax < position) position = rangeMax;
+                		if (rangeMin > position) position = rangeMin;
+                		currentslider.style.left = position + 'px';
+			});
+
+	}
+
+}
+
+filosofo_cp_addEvent(window, 'load', setItUp);
+filosofo_cp_addEvent(document, 'mouseup',function () { changePreview(); });
+
+function setItUp() {
+	s1 = new slider("sliderbar1","bgred_casing","bgred",255,255);
+	s2 = new slider("sliderbar2","bggreen_casing","bggreen",255,255);
+	s3 = new slider("sliderbar3","bgblue_casing","bgblue",255,255);
+	s4 = new slider("sliderbar4","txred_casing","txred",255,255);
+	s5 = new slider("sliderbar5","txgreen_casing","txgreen",255,255);
+	s6 = new slider("sliderbar6","txblue_casing","txblue",255,255);
+	s7 = new slider("sliderbar7","rperc_casing","rperc",255,100);
+	s8 = new slider("sliderbar8","gperc_casing","gperc",255,100);
+	s9 = new slider("sliderbar9","bperc_casing","bperc",255,100);
+
+	<?php foreach ($captcha_array as $key => $value) {
+		echo 'if (document.getElementById("' . $key . '")) { ' . "\n";
+		echo 'var ' . $key . ' =  document.getElementById("' . $key . '");' . "\n";
+		echo 'filosofo_cp_addEvent(' . $key . ',"change",changePreview);' . "\n";
+		echo "}\n";
+	}
+	?>
+	if (document.getElementById('restore')) {
+		var restore_button = document.getElementById('restore');	
+		filosofo_cp_addEvent(restore_button,"mouseup",function() { setTimeout('changePreview()',10); });
+	}
+}
+
+function encodeMyHtml(html) {
+	var encodedHtml = escape(html);
+	encodedHtml = encodedHtml.replace(/\//g,"%2F");
+	encodedHtml = encodedHtml.replace(/\?/g,"%3F");
+	encodedHtml = encodedHtml.replace(/=/g,"%3D");
+	encodedHtml = encodedHtml.replace(/&/g,"%26");
+	encodedHtml = encodedHtml.replace(/@/g,"%40");
+	return encodedHtml;
+} 
+
+function changePreview() {
+	var srcstring = '<?php echo get_option('siteurl'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>?test_num=1&the_num=123456789012345678901234567890';
+	var picture = document.getElementById("current_captcha_image");
+	if (!picture) return;
+	<?php foreach ($captcha_array as $key => $value) {
+		echo 'if (document.getElementById("' . $key . '")) { ' . "\n";
+		echo $key . ' =  document.getElementById("' . $key . '");' . "\n";
+		echo 'srcstring = srcstring + \'&' . $key . '=\' + encodeMyHtml(' . $key . '.value);' . "\n";
+		echo "}\n";
+	}
+	?>
+	picture.setAttribute('src', srcstring);
+}
+//]]>
+</script>
+
+<?php } ?>
+
 <ul id="adminmenu3">
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=1" <?php echo $current_tab[1] ?>>General</a></li>
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=2" <?php echo $current_tab[2] ?>>Preview Page Templates</a></li>
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=3" <?php echo $current_tab[3] ?>>Captcha Options</a></li>
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=4" <?php echo $current_tab[4] ?>>Set Alerts</a></li>
+	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=1" <?php echo $current_tab[1] ?>>General</a></li>
+	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2" <?php echo $current_tab[2] ?>>Preview Page Templates</a></li>
+	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=3" <?php echo $current_tab[3] ?>>Captcha Options</a></li>
+	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=4" <?php echo $current_tab[4] ?>>Set Alerts</a></li>
 </ul>
 <div class="wrap">
 <h2><?php _e('Options for the Filosofo Comments Preview Plugin') ?></h2>
 <?php
 }  //end function subpage_header 
 
-
-
-
 //***********************************************************************************
-function subpage_general()  {
-// prints the general options subpage
-global $filosofo_cp_default_options;
-// calls: filosofo_cp_get_option, e_, 
-//***********************************************************************************
+function subpage_general()  { // prints the general options subpage
+global $filosofo_cp_default_options; 
 $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 ?> 
-<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=1&amp;updated=true&amp;array=filosofo_cp_subpage_general_array">
+<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=1&amp;updated=true&amp;array=filosofo_cp_subpage_general_array">
 	<fieldset class="options">
 		<legend><?php _e('Button settings'); ?></legend>
 		<table>
@@ -654,6 +756,7 @@ $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 			<tr><th colspan="3"><?php _e('Miscellaneous Comments Settings'); ?></th></tr>
 			<tr><td><?php _e('The format for a comment\'s date, as called by <code>%comment_date</code> below:'); ?></td><td><input name="comments_settings_date_format" type="text" id="comments_settings_date_format" value="<?php echo $subpage_general_array['comments_settings_date_format']; ?>" size="50" /></td><td rowspan="2"><?php _e('Use the same syntax as the '); ?><a href="http://php.net/date">PHP <code>date()</code> function</a>.</td></tr>
 			<tr><td><?php _e('The format for a comment\'s time, as called by <code>%comment_time</code> below:'); ?></td><td><input name="comments_settings_time_format" type="text" id="comments_settings_time_format" value="<?php echo $subpage_general_array['comments_settings_time_format']; ?>" size="50" /></td></tr>
+			<tr><td><?php _e('The format for a comment\'s type, as called by <code>%comment_type</code> below:'); ?></td><td><input name="comments_settings_comment_type" type="text" id="comments_settings_comment_type" value="<?php echo  htmlspecialchars(stripslashes($subpage_general_array['comments_settings_comment_type'])); ?>" size="50" /></td><td><?php _e('Use the same arguments as for the '); ?><a href="http://codex.wordpress.org/Template_Tags/comment_type">WordPress <code>comment_type()</code> function</a>.</td></tr>
 			<tr><td rowspan="2"><?php _e('Alternating classes for every other comment, called by <code>%alt_class</code> below:'); ?><br /><?php _e('(For styling every other comment)'); ?></td><td><input name="comments_settings_oddcomment_class" type="text" id="comments_settings_oddcomment_class" value="<?php echo $subpage_general_array['comments_settings_oddcomment_class']; ?>" size="15" /></td><td></td></tr>
 			<tr><td><input name="comments_settings_evencomment_class" type="text" id="comments_settings_evencomment_class" value="<?php echo $subpage_general_array['comments_settings_evencomment_class']; ?>" size="15" /></td><td></td></tr>
 		</table>
@@ -692,7 +795,8 @@ $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 				</textarea></td>
 			</tr>
 		</table>
-		<p><?php _e('Edit the complete template for this theme at the '); ?><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=2"><?php _e('template page'); ?></a>.</p>
+		<p><?php _e('Edit the complete template for this theme at the '); ?><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2"><?php _e('template page'); 
+?></a>.</p>
 	</fieldset>
 	<p class="submit">
 		<input type="submit" name="Submit" value="<?php _e('Save General Comments Preview Options') ?> &raquo;" />
@@ -702,19 +806,15 @@ $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 <?php
 } //end function subpage_general
 
-
 //***************************************************************************************
-function subpage_preview_template() {
-// prints the preview options subpage 
+function subpage_preview_template() { // prints the preview options subpage 
 global $filosofo_cp_default_options;
-// calls: get_option, get_themes, filosofo_cp_get_option, _e,  
-//***************************************************************************************
-$current_stylesheet = get_option('stylesheet');
-$themetoedit = $this->dirify($current_stylesheet);
-if (!empty($_POST['themetoedit'])) $themetoedit = $_POST['themetoedit'];
-$themes = get_themes(); 
+	$current_stylesheet = get_option('stylesheet');
+	$themetoedit = $this->dirify($current_stylesheet);
+	if (!empty($_POST['themetoedit'])) $themetoedit = $_POST['themetoedit'];
+	$themes = get_themes(); 
 ?>
-<form name="theme" method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=2"> 
+<form name="theme" method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2"> 
 	<label for="themetoedit"><?php _e('Select corresponding theme:') ?></label>
 	<select name="themetoedit" id="themetoedit">
 		<?php
@@ -731,7 +831,7 @@ $themes = get_themes();
 	</select>
 	<input type="submit" name="submittheme" id="submittheme" value="<?php _e('Select') ?> &raquo;" />
 </form>
-<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=2&amp;updated=true">
+<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2&amp;updated=true">
 <input type="hidden" name="themetoedit" id="themetoedit2" value="<?php echo $themetoedit ?>" />
 	<fieldset class="options">
 		<legend>Comments Preview Template for the <?php echo $themetoedit; ?> Stylesheet</legend>
@@ -747,6 +847,7 @@ $themes = get_themes();
  %previewed_prev_comments    - The previous comments, if activated
  %previewed_raw_comment      - The comment in raw XHTML form, for the &lt;textarea&gt;
  %previewed_url              - The previewed comment author's URL, if applicable
+ %previewed_post_title       - The title of the post for which one is leaving a comment
 			</pre>
 		</p>
 		<div class="filosofo_cp_edittext">
@@ -760,7 +861,7 @@ $themes = get_themes();
 		<input type="submit" class="filosofo_cp_deletepost" id="deletepost" name="reset" value="<?php _e('Reset this Preview Template to Default') ?> &raquo;" onclick="return confirm('You are about to reset your Preview Template.\n  \'Cancel\' to stop, \'OK\' to reset.')" />
 	</p>
 </form>
-<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=2&amp;updated=true">
+<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2&amp;updated=true">
 	<fieldset class="options">
 		<legend><?php _e('Pop-up Comments Preview Template for the '); ?><?php echo $themetoedit; ?> <?php _e('Stylesheet'); ?></legend>
 		<div class="filosofo_cp_edittext">
@@ -777,16 +878,16 @@ $themes = get_themes();
 <?php
 } //end function subpage_preview_template
 
-
-
 //********************************************************************************
-function subpage_captcha() {
-// prints the captcha options subpage
-// calls: 
-//********************************************************************************
-$captcha_array = $this->get_option('filosofo_cp_captcha_array');
+function subpage_captcha() { // prints the captcha options subpage
+	$captcha_array = $this->get_option('filosofo_cp_captcha_array');
+	$i = 1;
+	while ($i <= 9) {
+		echo '<div id="sliderbar' . $i . '" class="sliderbar" style="top: 6px; left: -500px;"><div class="shader"></div></div>' . "\n";
+		$i++;
+	}
 ?>
-<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=3&amp;updated=true&amp;array=filosofo_cp_captcha_array">
+<form method="POST" id="captcha_settings_form" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=3&amp;updated=true&amp;array=filosofo_cp_captcha_array">
 	<fieldset class="options">
 		<legend><?php _e('Captcha Settings'); ?></legend>
 		<p><?php _e('A "<acronym title="completely automated public Turing test to tell computers and humans apart">captcha</acronym>" requires commenters to enter a code displayed in an image before submitting their comments.'); ?>
@@ -800,18 +901,42 @@ $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 		<p><?php _e('Choosing "No" disables the captcha. <br />Choosing "Yes: on the initial page" requires the captcha once, but it does not require it after the first preview.  <br />Choosing "Yes: on every comment page" requires commenters to enter the captcha code every time they preview or submit.'); ?>
 		</p>
 		<hr />
-		<div style="float:right;"><p><?php _e('Current Captcha appearance'); ?>:</p><br /><img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/filosofo-comments-preview.php?captcha_image=yes&amp;random_num=123456" title="Sample Captcha Image" id="sample_captcha_image" /></div>
+		<div style="float:right;"><p><?php _e('Saved Captcha appearance:'); ?></p><br /><img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>?captcha_image=yes&amp;random_num=123456" title="Sample Captcha Image" id="sample_captcha_image" />
+		<p><?php _e('Captcha Preview:'); ?></p><br />
+		<img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>?test_num=true&the_num=1234567890<?php $temp_array = $captcha_array; $temp_array['rperc'] = $temp_array['rperc']*100; $temp_array['gperc'] = $temp_array['gperc']*100; $temp_array['bperc'] = $temp_array['bperc']*100; foreach ($temp_array as $key => $value)	echo '&amp;' . $key . '=' . $value; ?>" title="Sample Current Captcha Image" id="current_captcha_image" />
+		</div>
 		<div>
+			<?php if (!function_exists('imagestring')) { ?>
+				<p><strong style="color:red"><?php _e('Your server does not appear to have the <a href="http://www.boutell.com/gd/">GD image library</a> installed, so the captcha probably will not appear correctly.'); ?></strong></p>
+			<?php } ?>
 			<table>
-				<tr><th colspan="2"><?php _e('Fine-tune the captcha features'); ?></th></tr>
-				<tr><td><label for="captcha_label"><?php _e('The label for the captcha text box'); ?></label></td><td><input name="captcha_label" type="text" id="captcha_label" value="<?php echo $captcha_array['captcha_label']; ?>" size="50" /></td></tr>
-                    <tr><td><label for="num_length"><?php _e('The length of the number that appears'); ?></label></td><td><input name="num_length" type="text" id="num_length" value="<?php echo $captcha_array['num_length']; ?>" size="10" /></td></tr>
-				<tr><td><label for="circles"><?php _e('The number of background ellipses'); ?></label></td><td><input name="circles" type="text" id="circles" value="<?php echo $captcha_array['circles']; ?>" size="5" /></td></tr>
-				<tr><td><label for="lines"><?php _e('The number of horizontal lines'); ?></label></td><td><input name="lines" type="text" id="lines" value="<?php echo $captcha_array['lines']; ?>" size="5" /></td></tr>
-				<tr><td><label for="width"><?php _e('The width in pixels of the captcha image'); ?></label></td><td><input name="width" type="text" id="width" value="<?php echo $captcha_array['width']; ?>" size="10" /></td></tr>
-				<tr><td><label for="height"><?php _e('The height in pixels of the captcha image'); ?></label></td><td><input name="height" type="text" id="height" value="<?php echo $captcha_array['height']; ?>" size="10" /></td></tr>
+				<tr><th colspan="3"><?php _e('Fine-tune the captcha features'); ?></th></tr>
+				<tr><td><label for="captcha_label"><?php _e('The label for the captcha text box'); ?></label></td><td colspan="2"><input name="captcha_label" type="text" id="captcha_label" value="<?php echo $captcha_array['captcha_label']; ?>" size="50" /></td></tr>
+                    		<tr><td><label for="num_length"><?php _e('The length of the number that appears'); ?></label></td><td colspan="2"><input name="num_length" type="text" id="num_length" value="<?php echo $captcha_array['num_length']; ?>" size="10" /></td></tr>
+				<tr><td><label for="circles"><?php _e('The number of background ellipses'); ?></label></td><td colspan="2"><input name="circles" type="text" id="circles" value="<?php echo $captcha_array['circles']; ?>" size="5" /></td></tr>
+				<tr><td><label for="lines"><?php _e('The number of horizontal lines'); ?></label></td><td colspan="2"><input name="lines" type="text" id="lines" value="<?php echo $captcha_array['lines']; ?>" size="5" /></td></tr>
+				<tr><td><label for="width"><?php _e('The width in pixels of the captcha image'); ?></label></td><td colspan="2"><input name="width" type="text" id="width" value="<?php echo $captcha_array['width']; ?>" size="10" /></td></tr>
+				<tr><td><label for="height"><?php _e('The height in pixels of the captcha image'); ?></label></td><td colspan="2"><input name="height" type="text" id="height" value="<?php echo $captcha_array['height']; ?>" size="10" /></td></tr>
+				<tr><td><label for="x_ord"><?php _e('The x-coordinate of the image text'); ?></label></td><td colspan="2"><input name="x_ord" type="text" id="x_ord" value="<?php echo $captcha_array['x_ord']; ?>" size="10" /></td></tr>
+				<tr><td><label for="y_ord"><?php _e('The y-coordinate of the image text'); ?></label></td><td colspan="2"><input name="y_ord" type="text" id="y_ord" value="<?php echo $captcha_array['y_ord']; ?>" size="10" /></td></tr>
+				<?php if (!function_exists('imagettftext')) { 
+				 	$captcha_array['use_font'] = 0;
+					$use_font_disabled = 'disabled="disabled"';		
+					$disabled_style = 'style="background-color: #ccc"'; ?>		 
+					<tr <?php echo $disabled_style; ?>><td colspan="3"><?php _e('In order to create custom fonts, your server must have the <a href="http://www.boutell.com/gd/">GD image library</a> and the <a href="http://www.freetype.org/">TrueType</a> libraries installed; however, it seems at least one is not.'); ?></td></tr>
+				<?php } ?>
+				<tr <?php echo $disabled_style; ?>><td><label for="use_font"><?php _e('Use a custom TrueType font for the captcha image'); ?></label></td><td colspan="2">	
+					<select name="use_font" id="use_font" <?php echo $use_font_disabled; ?>>
+						<option value="0" <?php if ($captcha_array['use_font']== 0) {echo 'selected="selected"';} ?>><?php _e('No'); ?></option>
+						<option value="1" <?php if ($captcha_array['use_font']== 1) {echo 'selected="selected"';} ?>><?php _e('Yes'); ?></option>
+					</select></td></tr>
+				<?php if ($captcha_array['use_font'] && !is_file($captcha_array['font_path'])) { ?>
+				<tr style="background-color: #ccc"><td colspan="3"><?php _e('The path below does not seem to point to a file.'); ?></td></tr>
+ 				<?php } ?>
+				<tr <?php echo $disabled_style; ?>><td><label for="font_path"><?php _e('The path to the custom TrueType font file'); ?></label></td><td colspan="2"><input name="font_path" type="text" id="font_path" <?php echo $use_font_disabled; echo $disabled_style; ?> value="<?php echo $captcha_array['font_path']; ?>" size="50" /></td></tr>
+				<tr <?php echo $disabled_style; ?>><td><label for="angle"><?php _e('The angle of the custom font text'); ?></label></td><td colspan="2"><input name="angle" type="text" id="angle" value="<?php echo $captcha_array['angle']; ?>" size="10" /></td></tr>
 				<tr><td><label for="font"><?php _e('Font size'); ?></label></td>
-					<td><select name="font" id="font" size=""><?php
+					<td colspan="2"><select name="font" id="font" size=""><?php
 						for ($i=1;$i<6;$i++) {
 							if ($captcha_array['font']==$i) {
 								$selected = 'selected="selected"';
@@ -835,6 +960,7 @@ $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
 						} ?>
 					</select></td>
+					<td><div id="bgred_casing" class="slidercasing"><div id="bgred_track" class="slidertrack"></div></div></td>
 				</tr>
 				<tr><td><label for="bggreen"><?php _e('RGB green setting for the background'); ?></label></td>
 					<td><select name="bggreen" id="bggreen" size=""><?php
@@ -848,8 +974,9 @@ $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
 						} ?>
 					</select></td>
+					<td><div id="bggreen_casing" class="slidercasing"><div id="bggreen_track" class="slidertrack"></div></div></td>
 				</tr>
-				<tr><td><label for="bgblue"><?php _e('RGB green setting for the background'); ?></label></td>
+				<tr><td><label for="bgblue"><?php _e('RGB blue setting for the background'); ?></label></td>
 					<td><select name="bgblue" id="bgblue" size=""><?php
 						for ($i=0;$i<256;$i++) {
 							if ($captcha_array['bgblue']==$i) {
@@ -861,6 +988,7 @@ $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
 						} ?>
 					</select></td>
+					<td><div id="bgblue_casing" class="slidercasing"><div id="bgblue_track" class="slidertrack"></div></div></td>
 				</tr>
 				<tr><td><label for="txred"><?php _e('RGB red setting for the text'); ?></label></td>
 					<td><select name="txred" id="txred" size=""><?php
@@ -874,6 +1002,7 @@ $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
 						} ?>
 					</select></td>
+					<td><div id="txred_casing" class="slidercasing"><div id="txred_track" class="slidertrack"></div></div></td>
 				</tr>
 				<tr><td><label for="txgreen"><?php _e('RGB green setting for the text'); ?></label></td>
 					<td><select name="txgreen" id="txgreen" size=""><?php
@@ -887,6 +1016,7 @@ $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
 						} ?>
 					</select></td>
+					<td><div id="txgreen_casing" class="slidercasing"><div id="txgreen_track" class="slidertrack"></div></div></td>
 				</tr>
 				<tr><td><label for="txblue"><?php _e('RGB blue setting for the text'); ?></label></td>
 					<td><select name="txblue" id="txblue" size=""><?php
@@ -900,14 +1030,16 @@ $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
 						} ?>
 					</select></td>
+					<td><div id="txblue_casing" class="slidercasing"><div id="txblue_track" class="slidertrack"></div></div></td>
 				</tr>
-				<tr><td><label for="rperc"><?php _e('Variation in background color of RGB red'); ?></td><td><input name="rperc" type="text" id="rperc" value="<?php echo $captcha_array['rperc']; ?>" size="10" /></td></tr>
-				<tr><td><label for="gperc"><?php _e('Variation in background color of RGB green'); ?></td><td><input name="gperc" type="text" id="gperc" value="<?php echo $captcha_array['gperc']; ?>" size="10" /></td></tr>
-				<tr><td><label for="bperc"><?php _e('Variation in background color of RGB blue'); ?></td><td><input name="bperc" type="text" id="bperc" value="<?php echo $captcha_array['bperc']; ?>" size="10" /></td></tr>
+				<tr><td><label for="rperc"><?php _e('% Variation in background color of RGB red'); ?></td><td><input name="rperc" type="text" id="rperc" value="<?php echo $captcha_array['rperc']*100; ?>" size="10" /></td><td><div id="rperc_casing" class="slidercasing"><div id="rperc_track" class="slidertrack"></div></div></td></tr>
+				<tr><td><label for="gperc"><?php _e('% Variation in background color of RGB green'); ?></td><td><input name="gperc" type="text" id="gperc" value="<?php echo $captcha_array['gperc']*100; ?>" size="10" /></td><td><div id="gperc_casing" class="slidercasing"><div id="gperc_track" class="slidertrack"></div></div></td></tr>
+				<tr><td><label for="bperc"><?php _e('% Variation in background color of RGB blue'); ?></td><td><input name="bperc" type="text" id="bperc" value="<?php echo $captcha_array['bperc']*100; ?>" size="10" /></td><td><div id="bperc_casing" class="slidercasing"><div id="bperc_track" class="slidertrack"></div></div></td></tr>
 			</table>
 		</div>
 	</fieldset>
 	<p class="submit">
+		<input type="reset" name="restore" id="restore" value="<?php _e('Restore Captcha settings to their saved values'); ?> &raquo;" />
 		<input type="submit" name="submit" value="<?php _e('Save changes to the Captcha settings'); ?> &raquo;" />
 		<input type="submit" class="filosofo_cp_deletepost" id="reset" name="reset" value="<?php _e('Reset the Captcha settings to Default') ?> &raquo;" onclick="return confirm('You are about to reset the Captcha settings.\n  \'Cancel\' to stop, \'OK\' to reset.')" />
 	</p>
@@ -915,16 +1047,12 @@ $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 <?php
 } //end function subpage_captcha
 
-
 //********************************************************************************
-function subpage_alerts() {
-// prints the alerts options subpage
-global $filosofo_cp_default_options;
-// calls: e_, filosofo_cp_get_option, 
-//********************************************************************************
-$alerts_array = $this->get_option('filosofo_cp_alerts_array');
+function subpage_alerts() { // prints the alerts options subpage
+global $filosofo_cp_default_options; 
+	$alerts_array = $this->get_option('filosofo_cp_alerts_array');
 ?>
-<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=4&amp;updated=true&amp;array=filosofo_cp_alerts_array">
+<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=4&amp;updated=true&amp;array=filosofo_cp_alerts_array">
 	<fieldset class="options">
 		<legend><?php _e('Set Alerts'); ?></legend>
 		<p><?php _e('Alerts allow you to warn your commenters before they submit their comments with required fields left blank.'); ?></p>
@@ -962,7 +1090,7 @@ $alerts_array = $this->get_option('filosofo_cp_alerts_array');
 				<td><label for="email_id"><?php _e('The "Email" field\'s "id" attribute value') ?>:<br /><small><?php _e('(Most likely the default is correct)') ?></small></td>
 				<td><input name="email_id" type="text" id="email_id" value="<?php echo htmlspecialchars(stripslashes($alerts_array['email_id'])); ?>" size="10"  /></td>
 			</tr>
-			<tr><td><label for="captcha"><?php _e('Alert commenters that they have not filled in the "Chaptcha" field code?'); ?><br /><small><?php _e('(This applies only if you\'ve activated the '); ?><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=filosofo-comments-preview.php&amp;subpage=3"><?php _e('captcha feature'); ?></a>)</small></label></td>
+			<tr><td><label for="captcha"><?php _e('Alert commenters that they have not filled in the "Chaptcha" field code?'); ?><br /><small><?php _e('(This applies only if you\'ve activated the '); ?><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=3"><?php _e('captcha feature'); ?></a>)</small></label></td>
 				<td>
 					<select name="captcha" id="captcha" >
 						<option value="1" <?php if ($alerts_array['captcha']== 1) {echo 'selected="selected"';} ?>>Yes</option>
@@ -984,17 +1112,14 @@ $alerts_array = $this->get_option('filosofo_cp_alerts_array');
 <?php
 } // end subpage_alerts()
 
-
 //********************************************************************************
-function alert_scripts() {
-// prints out JavaScript alert scripts as needed
+function alert_scripts() { // prints out JavaScript alert scripts as needed
 global $filosofo_cp_default_options;
-// calls: filosofo_cp_get_option, 
-//********************************************************************************
-$alerts_array = $this->get_option('filosofo_cp_alerts_array');
-if ($alerts_array['activate']) {
-	$javascript_text = <<<JAVASCRIPT
+	$alerts_array = $this->get_option('filosofo_cp_alerts_array');
+	if ($alerts_array['activate']) {
+		$javascript_text = <<<JAVASCRIPT
 <script type="text/javascript">
+//<![CDATA[
 //******************************************************************************
 function addEvent(obj, evType, fn){
 // from http://www.sitepoint.com/article/structural-markup-javascript
@@ -1050,59 +1175,44 @@ checker.noBlankRequireds = function() {
 //***********************************************************************
 var return_value = true;
 JAVASCRIPT;
-	if ($alerts_array['captcha']) {
+	if ($alerts_array['captcha'])
 		$javascript_text .= 'if (checker.fieldAlert(\'' .  $alerts_array['captcha_id'] . '\',\'' . htmlspecialchars($alerts_array['captcha_text']) . '\')) { return_value = false; }' . "\n";
-	}
-	if ($alerts_array['email']) {
+	if (get_settings('require_name_email') && $alerts_array['email']) 
 		$javascript_text .= 'if (checker.fieldAlert(\'' .  $alerts_array['email_id'] . '\',\'' . htmlspecialchars($alerts_array['email_text']) . '\')) { return_value = false; }'. "\n";
-	}
-	if ($alerts_array['name']) {
+	if (get_settings('require_name_email') && $alerts_array['name']) 
 		$javascript_text .= 'if (checker.fieldAlert(\'' .  $alerts_array['name_id'] . '\',\'' . htmlspecialchars($alerts_array['name_text']) . '\')) { return_value = false; }'. "\n";
-	}
 	$javascript_text .= "\n return return_value; }\n";
 	$javascript_text .= 'checker.assignCommentSubmitEvent = function () {  var w = document.getElementById("';
 	$javascript_text .=  $alerts_array['form_id'] . '");';
-	$javascript_text .= "\n if (!w) return; \n w.onsubmit = checker.noBlankRequireds; } \n addEvent(window, 'load', checker.assignCommentSubmitEvent);\n</script>";
-echo $javascript_text;
-} 
-else {
-	return false;
-}
+	$javascript_text .= "\n if (!w) return; \n w.onsubmit = checker.noBlankRequireds; } \n addEvent(window, 'load', checker.assignCommentSubmitEvent);\n//]]>\n</script>";
+	echo $javascript_text;
+	} 
+	else {
+		return false;
+	}
 } //end alert_scripts
-
-
-
-
 
 //********************************************************************************
 // end options page stuff
 //********************************************************************************
 
-
 //********************************************************************************
-function submitbuttons($page = 'plain') {
-// prints out the submit buttons and extra stuff such as the captcha
-// args: page--the page that's calling this function
-// calls: filosofo_cp_get_option, filosofo_cp_alert_scripts, filosofo_cp_display_captcha
-//********************************************************************************
-$subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
-$this->display_captcha($page);
-//if the buttons are for a popup comments form
-if ('popup' == $page) { ?>
-	<input type="hidden" name="filosofo_cp_is_popup" id="filosofo_cp_is_popup" value="true" />
-	<?php 
-}
-if ($subpage_general_array['show_prev_button']) { ?>
-	<input type="hidden" name="filosofo_cp_post_permalink" id="filosofo_cp_post_permalink" value="<?php the_permalink() ?>" />
-	<input type="hidden" name="filosofo_cp_post_id" id="filosofo_cp_post_id" value="<?php the_ID() ?>" />
-	<input class="<?php echo $subpage_general_array['prev_button_class']; ?>" name="submit" id="<?php echo $subpage_general_array['prev_button_id']; ?>" type="submit" tabindex="5" value="<?php echo $subpage_general_array['prev_button_text']; ?>" /><?php 
-} 
-if ($subpage_general_array['show_submit_button']) { ?>
-<input class="<?php echo $subpage_general_array['submit_button_class']; ?>" name="submit" id="<?php echo $subpage_general_array['submit_button_id']; ?>" type="submit" tabindex="6" value="<?php echo $subpage_general_array['submit_button_text']; ?>" style="font-weight: bold;" /><?php
-}
+function submitbuttons($page = 'standard') { // prints out the submit buttons and extra stuff such as the captcha
+	$subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
+	$this->display_captcha($page);
+	//if the buttons are for a popup comments form
+	if ('popup' == $page) { ?>
+		<input type="hidden" name="filosofo_cp_is_popup" id="filosofo_cp_is_popup" value="true" />
+		<?php 
+	}
+	if ($subpage_general_array['show_prev_button']) { ?>
+		<input type="hidden" name="filosofo_cp_post_id" id="filosofo_cp_post_id" value="<?php the_ID() ?>" />
+		<input class="<?php echo $subpage_general_array['prev_button_class']; ?>" name="submit" id="<?php echo $subpage_general_array['prev_button_id']; ?>" type="submit" tabindex="5" value="<?php echo $subpage_general_array['prev_button_text']; ?>" /><?php 
+	} 
+	if ($subpage_general_array['show_submit_button']) { ?>
+		<input class="<?php echo $subpage_general_array['submit_button_class']; ?>" name="submit" id="<?php echo $subpage_general_array['submit_button_id']; ?>" type="submit" tabindex="6" value="<?php echo $subpage_general_array['submit_button_text']; ?>" style="font-weight: bold;" /><?php
+	}
 } //end submitbuttons
-
-
 
 //*****************************************************************************
 //  Captcha stuff
@@ -1110,53 +1220,43 @@ if ($subpage_general_array['show_submit_button']) { ?>
 //  http://coffelius.arabandalucia.com
 //*****************************************************************************
 
-
 //*****************************************************************************
-function captcha_process_number($number) {
-// passed a number, it returns an encoded number that will be used in the captcha image
+function captcha_process_number($number) { // passed a number, it returns an encoded number that will be used in the captcha image
 // args: number--the number to process into the displayed number
-// calls: $this->get_option, 
-//*****************************************************************************
-$captcha_array = $this->get_option('filosofo_cp_captcha_array');
-$datekey = date("F j");
-$salt = $captcha_array['salt'];
-$rcode = hexdec(md5($_SERVER[HTTP_USER_AGENT] . $salt . $number . $datekey));
-$code = substr($rcode, 2, $captcha_array['num_length']);
+	$captcha_array = $this->get_option('filosofo_cp_captcha_array');
+	$datekey = date("F j");
+	$salt = $captcha_array['salt'];
+	$rcode = hexdec(md5($_SERVER[HTTP_USER_AGENT] . $salt . $number . $datekey));
+	$code = substr($rcode, 2, $captcha_array['num_length']);
 return $code;
 } //end function captcha_process_number
 
-
-
 //*****************************************************************************
-function display_captcha($page=false) { 
-// displays the captcha and associated input values
+function display_captcha($page=false) { // displays the captcha and associated input values
 // arg: page--the page calling the function
-// calls: filosofo_cp_get_option, get_option,filosofo_cp_captcha_process_number 
-//*****************************************************************************
-$captcha_array = $this->get_option('filosofo_cp_captcha_array');
-$alerts_array = $this->get_option('filosofo_cp_alerts_array');
-$number = rand();
-//if captcha is set to be on
-if ($captcha_array['show_captcha'] > 0) {
-	//if the captcha should show up on every page
-	if (($captcha_array['show_captcha'] == 2) || ($page != false)) { ?>
-		<input type="hidden" name="filosofo_cp_captcha_number" id="filosofo_cp_captcha_number" value="<?php echo $number; ?>" />
-		<img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/filosofo-comments-preview.php?captcha_image=yes&amp;random_num=<?php echo $number; ?>" alt="<?php echo $captcha_array['captcha_label']; ?>" title="<?php echo $captcha_array['captcha_label']; ?>" />
-		<label for="<?php echo $alerts_array['captcha_id']; ?>"><?php echo $captcha_array['captcha_label']; ?></label>
-		<input type="text" name="<?php echo $alerts_array['captcha_id']; ?>" id="<?php echo $alerts_array['captcha_id']; ?>" size="28" /><?php
-	} //end if captcha should show up on every page
-	//elseif captcha should just show up the first time
-	elseif (!$page) {
-		?><input type="hidden" name="filosofo_cp_captcha_number" id="filosofo_cp_captcha_number" value="<?php echo $number; ?>" />
-		<input type="hidden" name="<?php echo $alerts_array['captcha_id']; ?>" id="<?php echo $alerts_array['captcha_id']; ?>" value="<?php echo $this->captcha_process_number($number); ?>" /><?php
-	}
-} //end if captcha is set to be on
+	$captcha_array = $this->get_option('filosofo_cp_captcha_array');
+	$alerts_array = $this->get_option('filosofo_cp_alerts_array');
+	$number = rand();
+	//if captcha is set to be on
+	if ($captcha_array['show_captcha'] > 0) {
+		//if the captcha should show up on every page
+		if (($captcha_array['show_captcha'] == 2) || ($page != false)) { ?>
+			<input type="hidden" name="filosofo_cp_captcha_number" id="filosofo_cp_captcha_number" value="<?php echo $number; ?>" />
+			<img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>?captcha_image=yes&amp;random_num=<?php echo $number; ?>" alt="<?php echo $captcha_array['captcha_label']; ?>" title="<?php echo $captcha_array['captcha_label']; ?>" />
+			<label for="<?php echo $alerts_array['captcha_id']; ?>"><?php echo $captcha_array['captcha_label']; ?></label>
+			<input type="text" name="<?php echo $alerts_array['captcha_id']; ?>" id="<?php echo $alerts_array['captcha_id']; ?>" size="28" /><?php
+		} //end if captcha should show up on every page
+		//elseif captcha should just show up the first time
+		elseif (!$page) {
+			?><input type="hidden" name="filosofo_cp_captcha_number" id="filosofo_cp_captcha_number" value="<?php echo $number; ?>" />
+			<input type="hidden" name="<?php echo $alerts_array['captcha_id']; ?>" id="<?php echo $alerts_array['captcha_id']; ?>" value="<?php echo $this->captcha_process_number($number); ?>" /><?php
+		}
+	} //end if captcha is set to be on
 } //end function display_captcha
 
-
-
 //*****************************************************************************
-function captcha_image($random_num,$num_length = 6,$circles = 5,$lines = 1,$width=100,$height=40,$font=5,$bgred=10,$bggreen=102,$bgblue=174,$txred=255,$txgreen=255,$txblue=255,$rperc=0.01,$gperc=0.51,$bperc=0.87) {
+function captcha_image($random_num,$num_length = 6,$circles = 5,$lines = 1,$width=100,$height=40,$font=5,$bgred=10,$bggreen=102,$bgblue=174,$txred=255,$txgreen=255,$txblue=255,$rperc=0.01,$gperc=0.51,$bperc=0.87,$use_font=0,$font_path='',$angle=0,$x_ord=20,$y_ord=10,$test_num=0) 
+{
 // creates the captcha image
 // args: $random_num--the random number sent to the image and included in the input
 //       $salt--a string to add to the "randomness" of the generated number
@@ -1175,171 +1275,131 @@ function captcha_image($random_num,$num_length = 6,$circles = 5,$lines = 1,$widt
 //       $rperc--the percentage of variation
 //       $gperc--the percentage of variation
 //       $bperc--the percentage of variation
+//	 $use_font--whether to use a TrueType font file
+//	 $font_path--the path to a TrueType font file
+//	 $angle--the angle of the text
+//	 $x_ord--the x coordinate of the text
+//	 $y_ord--the y coordinate of the text
 //
-// calls: captcha_process_number
-//*****************************************************************************
-$code = $this->captcha_process_number($random_num);
-$fontwidth = ImageFontWidth($font) * $num_length;
-$fontheight = ImageFontHeight($font);
-$im = @imagecreate ($width,$height);
-$background_color = imagecolorallocate ($im, $bgred, $bggreen, $bgblue);
-$text_color = imagecolorallocate ($im, $txred, $txgreen, $txblue);
-for ($i=1;$i<=$circles;$i++) {
-	$value=rand(200, 255);
-	$randomcolor = imagecolorallocate ($im , $value*$rperc, $value*$gperc,$value*$bperc);
-	imagefilledellipse($im,rand(0,$width-10),rand(0,$height-3),rand(20,70),rand(20,70),$randomcolor);
-}
-//draws a border for the box with the color of the text
-imagerectangle($im,0,0,$width-1,$height-1,$text_color);
-//writes out the text string
-//imagettftext($im, 15, 15, 11, 35, $text_color, 'Kids.ttf', $code);
-imagestring ($im, $font, 22, 12,$code,$text_color);
-//create lines
-for ($i=0;$i<$lines;$i++) {
-	$y=rand(14, 24);
-	//$randomcolor=imagecolorallocate($im, 0,0, rand(100, 255));
-	imageline($im, 0, $y, $width, $y, $text_color);
-}
-header ("Content-type: image/jpeg");
-imagejpeg ($im,'',80);
-ImageDestroy($im);
-die();
+	if ($test_num) {	
+		$code = substr($random_num,0,$num_length);
+		$rperc = $rperc * .01;
+		$gperc = $gperc * .01;
+		$bperc = $bperc * .01;
+	}
+	else $code = $this->captcha_process_number($random_num);
+	$fontwidth = ImageFontWidth($font) * $num_length;
+	$fontheight = ImageFontHeight($font);
+	$im = @imagecreate ($width,$height);
+	$background_color = imagecolorallocate ($im, $bgred, $bggreen, $bgblue);
+	$text_color = imagecolorallocate ($im, $txred, $txgreen, $txblue);
+	for ($i=1;$i<=$circles;$i++) {
+		$value=rand(200, 255);
+		$randomcolor = imagecolorallocate ($im , $value*$rperc, $value*$gperc,$value*$bperc);
+		imagefilledellipse($im,rand(0,$width-10),rand(0,$height-3),rand(20,70),rand(20,70),$randomcolor);
+	}
+	//draws a border for the box with the color of the text
+	imagerectangle($im,0,0,$width-1,$height-1,$text_color);
+	//writes out the text string
+	if ($use_font && is_file($font_path) && function_exists('imagettftext'))
+		imagettftext($im, 3*$font, $angle, $x_ord, $y_ord, $text_color, $font_path, $code);
+	else imagestring ($im, $font, $x_ord, $y_ord, $code, $text_color);
+	//create lines
+	for ($i=0;$i<$lines;$i++) {
+		$y=rand(14, 24);
+		//$randomcolor=imagecolorallocate($im, 0,0, rand(100, 255));
+		imageline($im, 0, $y, $width, $y, $text_color);
+	}
+	header ("Content-type: image/jpeg");
+	imagejpeg ($im,'',80);
+	ImageDestroy($im);
+	die();
 }  // end captcha image
 
-
-
 //*****************************************************************************
-function captcha_human_check($random_num, $string) {
-// checks that the code-enterer is a person, not a spammer
+function captcha_human_check($random_num, $string) { // checks that the code-enterer is a person, not a spammer
 // args: $string--the string returned in the form
 //	random_num--the original number before processing
-// calls: captcha_process_number
-//*****************************************************************************
-$code = $this->captcha_process_number($random_num);
+	$code = $this->captcha_process_number($random_num);
 return $string==$code;
 } //end captcha_human_check
 
-
-
-
-
-
 //*****************************************************************************
-function filter_comment($comment) {
-// applies filters to the $comment, so that in the preview it appears as it will finally
+function filter_comment($comment) { // applies filters to the $comment, so that in the preview it appears as it will finally
 // arg: comment--the comment to be filtered
-// calls: apply_filters, 
-//*****************************************************************************
-// filter explanations from http://codex.wordpress.org/Plugin_API
-//preprocessing a new comment's content prior to saving it in the database, called with the comment content passed as a string. Should return a string.
-$comment = apply_filters('pre_comment_content', $comment);
-$comment = apply_filters('comment_content_presave', $comment); // Deprecated
-
-$comment = stripslashes($comment);
-
-$comment = apply_filters('post_comment_text', $comment); // Deprecated
-// applied to comment content prior to rendering. Passed the comment as a string.
-$comment = apply_filters('comment_text', $comment);
+	// filter explanations from http://codex.wordpress.org/Plugin_API
+	//preprocessing a new comment's content prior to saving it in the database, called with the comment content passed as a string. Should return a string.
+	$comment = apply_filters('pre_comment_content', $comment);
+	$comment = apply_filters('comment_content_presave', $comment); // Deprecated
+	$comment = stripslashes($comment);
+	$comment = apply_filters('post_comment_text', $comment); // Deprecated
+	// applied to comment content prior to rendering. Passed the comment as a string.
+	$comment = apply_filters('comment_text', $comment);
 return $comment;
 } //end filter_comment
 
-
-
-
 //*****************************************************************************
-function template_format($template) {
-// replaces template variables such as %comment_entire with PHP, etc.
+function template_format($template) { // replaces template variables such as %comment_entire with PHP, etc.
 // arg: template--the text through which to search for replacable variables
-//*****************************************************************************
-/*  %alt_class       - Set above, this class name alternates with every comment
- %author_url      - URL of author or trackback
- %comment_author  - Name left by the commenter
- %comment_entire  - The comment text
- %comment_id      - The WordPress id of the comment
- %comment_link    - Link to the comment
- %comment_date    - Date of comment
- %comment_time    - Time of comment
- %comment_type    - Type of comment: default is "Comment"
- %previewed_author_link      - The previewed comment's author as a link, if applicable
- %previewed_author           - The previewed comment's author
- %previewed_buttons          - The submit buttons
- %previewed_comment          - The previewed comment, formatted and filtered
- %previewed_email            - The previewed comment author's email address
- %previewed_form_submit_path - The path to which the form submits
- %previewed_prev_comments    - The previous comments, if activated
- %previewed_raw_comment      - The comment in raw XHTML form, for the &lt;textarea&gt;
- %previewed_url              - The previewed comment author's URL, if applicable
- %userid                     - UserID of the commenter    */
-
-$previewed_buttons = '<?php $filosofo_cp_class->display_captcha(); ?>
-   <?php do_action(\'comment_form\', $comment_post_ID); ?>
-   <?php $subpage_general_array = $filosofo_cp_class->get_option(\'filosofo_cp_subpage_general_array\'); ?>
-     <input type="hidden" name="comment_post_ID" value="<?php echo $comment_post_ID; ?>" />
-  <input type="hidden" name="redirect_to" value="<?php echo $redirect_to; ?>" />
-  <input type="hidden" name="filosofo_cp_post_permalink" id="filosofo_cp_post_permalink" value="<?php echo $filosofo_cp_post_permalink ?>" />
-  <input type="hidden" name="filosofo_cp_post_id" id="filosofo_cp_post_id" value="<?php echo $filosofo_cp_post_id ?>" />
-  <input class="button" name="submit" id="preview" type="submit" tabindex="5" value="<?php echo $subpage_general_array[\'prev_button_text\']; ?>" />
-  <input class="button" name="submit" id="submit" type="submit" tabindex="6" value="<?php echo $subpage_general_array[\'submit_button_text\']; ?>" style="font-weight: bold;" />';
-if (isset($_POST['filosofo_cp_is_popup'])) {
-	$previewed_buttons = '<input type="hidden" name="filosofo_cp_is_popup" id="filosofo_cp_is_popup" value="true" />' . $previewed_buttons;
-}
-
-
-
-$template = str_replace("%alt_class",'<?php echo $oddcomment; ?>', $template);
-$template = str_replace("%author_url",'<?php echo $comment->comment_author_url; ?>',$template);
-$template = str_replace("%comment_author",'<?php echo $comment->comment_author; ?>',$template);
-$template = str_replace("%comment_entire",'<?php echo $filosofo_cp_class->filter_comment($comment->comment_content); ?>',$template);
-$template = str_replace("%comment_id",'<?php echo $comment->comment_ID; ?>',$template);
-$template = str_replace("%comment_link",'<?php echo $filosofo_cp_post_permalink ?>#comment-<?php echo $comment->comment_ID; ?>',$template);
-$template = str_replace("%comment_date",'<?php echo mysql2date( $subpage_general_array[\'comments_settings_date_format\'], $comment->comment_date); ?>',$template);
-$template = str_replace("%comment_time",'<?php echo mysql2date( $subpage_general_array[\'comments_settings_time_format\'], $comment->comment_date); ?>',$template);
-$template = str_replace("%comment_type",'<?php comment_type(__(\'Comment\'), __(\'Trackback\'), __(\'Pingback\')); ?>',$template);
-$template = str_replace("%previewed_author_link",'<?php if (empty($url)) :  echo $author; else: echo "<a href=\'$url\' rel=\'external\'>$author</a>"; endif; ?>',$template);
-$template = str_replace("%previewed_author",'<?php echo $author; ?>',$template);
-$template = str_replace("%previewed_buttons",$previewed_buttons,$template);
-$template = str_replace("%previewed_comment",'<?php echo $fcp_comment; ?>',$template);
-$template = str_replace("%previewed_email",'<?php echo $email; ?>',$template);
-$template = str_replace("%previewed_form_submit_path",'<?php echo get_settings(\'siteurl\'); ?>/wp-content/plugins/filosofo-comments-preview.php',$template);
-$template = str_replace("%previewed_prev_comments",'<?php $subpage_general_array = $filosofo_cp_class->get_option(\'filosofo_cp_subpage_general_array\'); if ($subpage_general_array[\'comments_settings_show\'] == 1) { echo filosofo_cp_display_previous_comments(); } ?>',$template);
-$template = str_replace("%previewed_raw_comment",'<?php echo stripslashes($raw_comment); ?>',$template);
-$template = str_replace("%previewed_url",'<?php echo $url; ?>',$template);
-$template = str_replace("%userid",'<?php echo $comment->user_id; ?>',$template);
+	$subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
+	$previewed_buttons = '<?php $filosofo_cp_class->display_captcha(); ?>
+   	<?php do_action(\'comment_form\', $comment_post_ID); ?>
+   	<?php $subpage_general_array = $filosofo_cp_class->get_option(\'filosofo_cp_subpage_general_array\'); ?>
+     	<input type="hidden" name="comment_post_ID" value="<?php echo $comment_post_ID; ?>" />
+  	<input type="hidden" name="redirect_to" value="<?php echo $redirect_to; ?>" />
+  	<input type="hidden" name="filosofo_cp_post_id" id="filosofo_cp_post_id" value="<?php echo $filosofo_cp_post_id ?>" />
+  	<input class="button" name="submit" id="preview" type="submit" tabindex="5" value="<?php echo $subpage_general_array[\'prev_button_text\']; ?>" />
+  	<input class="button" name="submit" id="submit" type="submit" tabindex="6" value="<?php echo $subpage_general_array[\'submit_button_text\']; ?>" style="font-weight: bold;" />';
+	if (isset($_POST['filosofo_cp_is_popup']))
+		$previewed_buttons = '<input type="hidden" name="filosofo_cp_is_popup" id="filosofo_cp_is_popup" value="true" />' . $previewed_buttons;
+	$template = str_replace("%alt_class",'<?php echo $oddcomment; ?>', $template);
+	$template = str_replace("%author_url",'<?php comment_author_url(); ?>',$template);
+	$template = str_replace("%comment_author",'<?php comment_author(); ?>',$template);
+	$template = str_replace("%comment_entire",'<?php echo $filosofo_cp_class->filter_comment($comment->comment_content); ?>',$template);
+	$template = str_replace("%comment_id",'<?php echo $comment->comment_ID; ?>',$template);
+	$template = str_replace("%comment_link",'<?php echo get_comment_link(); ?>',$template);
+	$template = str_replace("%comment_date",'<?php comment_date($subpage_general_array[\'comments_settings_date_format\']); ?>',$template);
+	$template = str_replace("%comment_time",'<?php comment_time($subpage_general_array[\'comments_settings_time_format\']); ?>',$template);
+	$template = str_replace("%comment_type",'<?php comment_type(' . stripslashes($subpage_general_array["comments_settings_comment_type"]) .'); ?>',$template);
+	$template = str_replace("%previewed_author_link",'<?php  $author_filtered = $author; if (empty($author_filtered)) $author_filtered = __(\'Anonymous\'); if (empty($url)) : echo apply_filters(\'comment_author\',$author_filtered); else: $url = apply_filters(\'comment_url\',$url); $link = "<a href=\'$url\' rel=\'external\'>" . apply_filters(\'comment_author\',$author_filtered) . "</a>"; echo apply_filters(\'get_comment_author_link\',$link); endif; ?>',$template);
+	$template = str_replace("%previewed_author",'<?php echo apply_filters(\'comment_author\',$author); ?>',$template);
+	$template = str_replace("%previewed_buttons",$previewed_buttons,$template);
+	$template = str_replace("%previewed_comment",'<?php echo $fcp_comment; ?>',$template);
+	$template = str_replace("%previewed_email",'<?php echo apply_filters(\'comment_email\',$email); ?>',$template);
+	$template = str_replace("%previewed_form_submit_path",'<?php echo get_settings(\'siteurl\'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>',$template);
+	$template = str_replace("%previewed_prev_comments",'<?php $subpage_general_array = $filosofo_cp_class->get_option(\'filosofo_cp_subpage_general_array\'); if ($subpage_general_array[\'comments_settings_show\'] == 1) { echo filosofo_cp_display_previous_comments(); } ?>',$template);
+	$template = str_replace("%previewed_raw_comment",'<?php echo stripslashes($raw_comment); ?>',$template);
+	$template = str_replace("%previewed_url",'<?php echo apply_filters(\'comment_url\',$url); ?>',$template);
+	$template = str_replace("%userid",'<?php echo $comment->user_id; ?>',$template);
+	$template = str_replace("%previewed_post_title",'<?php echo apply_filters(\'the_title\',get_the_title($filosofo_cp_post_id)); ?>',$template);
 return $template;
-} //end   template_format
-
+} //end template_format
 
 //***************************************************************
-function dirify($s) {
-// takes out problematic characters for URLs (or DB entries)
-//***************************************************************
-     $s = sanitize_title($s); 			## take out weird characters		
-     $s = strtolower($s);           		## lower-case.
-     $s = strip_tags($s);       		## remove HTML tags.
-     $s = preg_replace('!&[^;\s]+;!','',$s);    ## remove HTML entities.
-     $s = preg_replace('![^\w\s]!','',$s);      ## remove non-word/space chars.
-     $s = preg_replace('!\s+!','_',$s); 	## change space chars to underscores.
-     return $s;    
+function dirify($s) { // takes out problematic characters for URLs (or DB entries)
+	$s = sanitize_title($s); 			## take out weird characters		
+	$s = strtolower($s);           		## lower-case.
+	$s = strip_tags($s);       		## remove HTML tags.
+	$s = preg_replace('!&[^;\s]+;!','',$s);    ## remove HTML entities.
+	$s = preg_replace('![^\w\s]!','',$s);      ## remove non-word/space chars.
+	$s = preg_replace('!\s+!','_',$s); 	## change space chars to underscores.
+return $s;    
 } //end dirify
 
-
 //***************************************************************
-function get_the_files_content($comments_path) {
-//gets the file's content, even for PHP 4.2
-//***************************************************************
-$content = '';
-if (function_exists(file_get_contents)) 
-	$content = file_get_contents($comments_path);
-else {
-	$content_array = file($comments_path);
-	foreach ($content_array as $line)
-		$content .= $line; 
-} 
+function get_the_files_content($comments_path) { //gets the file's content, even for PHP 4.2
+	if (!file_exists($comments_path))
+        	return false;
+	$content = '';
+	if (function_exists(file_get_contents)) 
+		$content = file_get_contents($comments_path);
+	else {
+		$content_array = file($comments_path);
+		foreach ($content_array as $line)
+			$content .= $line; 
+	} 
 return $content;
 } //end get_the_files_content
-
-
-
 
 } //end filosofo_cp class
 } //end if filosofo_cp class exists
@@ -1348,100 +1408,81 @@ $filosofo_cp_class = new filosofo_cp();
 
 //for backwards compatibility
 if(!function_exists('filosofo_cp_submitbuttons')) {
-function filosofo_cp_submitbuttons($variable) {
-global $filosofo_cp_class;
+	function filosofo_cp_submitbuttons($variable) {
+	global $filosofo_cp_class;
 	return $filosofo_cp_class->submitbuttons($variable);
-}
+	}
 }
 
 if((!get_option('filosofo_cp_version')) || ($filosofo_cp_version > get_option('filosofo_cp_version'))) 
 	$filosofo_cp_class->upgrade();
 	
-if(get_settings('date_format')) $date_format = get_settings('date_format');
-else $date_format = 'F j, Y';
-if(get_settings('time_format')) $time_format = get_settings('time_format');
-else $time_format = 'g:i a';
-
 if(!function_exists('filosofo_cp_display_previous_comments')) {
 //*****************************************************************************
-function filosofo_cp_display_previous_comments() {
-// displays the previous comments in the preview
-global $filosofo_cp_class, $wpdb, $filosofo_cp_post_id, $filosofo_cp_post_permalink, $user_ID, $comment_post_ID;
-// calls: filosofo_cp_get_option, _e, 
-//*****************************************************************************
-$subpage_general_array = $filosofo_cp_class->get_option('filosofo_cp_subpage_general_array');
-//if we are to show the previous comments on the preview page
-if($subpage_general_array['comments_settings_show']) {
-	$id = $filosofo_cp_post_id;
-	$comments = $wpdb->get_results("SELECT * FROM $wpdb->comments WHERE comment_post_ID = $id AND comment_approved = '1' ORDER BY comment_date");
-	//if there actually are comments
-	if(is_array($comments)) {
-		//if the previous comments should be shown in reverse order
-		if($subpage_general_array['comments_settings_reverse']) {
-			$comments = array_reverse($comments);
-		}
-		// These variables are for alternating comment background */
-		$oddcommentA = $subpage_general_array['comments_settings_oddcomment_class'];
-		$oddcommentB = $subpage_general_array['comments_settings_evencomment_class'];
-		$oddcomment = $oddcommentA;
+function filosofo_cp_display_previous_comments() { // displays the previous comments in the preview
+global $filosofo_cp_class, $wpdb, $filosofo_cp_post_id, $user_ID, $comment_post_ID;
+	$subpage_general_array = $filosofo_cp_class->get_option('filosofo_cp_subpage_general_array');
+	//if we are to show the previous comments on the preview page
+	if($subpage_general_array['comments_settings_show']) {
+		$id = $filosofo_cp_post_id;
+		$comments = $wpdb->get_results("SELECT * FROM $wpdb->comments WHERE comment_post_ID = $id AND comment_approved = '1' ORDER BY comment_date");
+		//if there actually are comments
+		if(is_array($comments)) {
+			//if the previous comments should be shown in reverse order
+			if($subpage_general_array['comments_settings_reverse']) 
+				$comments = array_reverse($comments);
+			// These variables are for alternating comment background
+			$oddcommentA = $subpage_general_array['comments_settings_oddcomment_class'];
+			$oddcommentB = $subpage_general_array['comments_settings_evencomment_class'];
+			$oddcomment = $oddcommentA;
 
-		if ($comments) :
-			eval('?> ' . stripslashes($subpage_general_array['comments_header']));
-			foreach ($comments as $comment) : ?>
-				<?php /* Changes every other comment to a different class */    
-				if ($oddcommentA == $oddcomment) $oddcomment = $oddcommentB;
-				else $oddcomment = $oddcommentA;
-				eval('?> ' . stripslashes($filosofo_cp_class->template_format($subpage_general_array['comments_template'])));
-				if (user_can_edit_post_comments($user_ID, $comment_post_ID)) {
-					$location = get_settings('siteurl') . "/wp-admin/post.php?action=editcomment&amp;comment=$comment->comment_ID";
-					echo " | <a href='$location'>";
-					_e('Edit');
-					echo "</a> |";
-				}
-			endforeach;
-			eval('?> ' . stripslashes($subpage_general_array['comments_footer']));
-		else : // this is displayed if there are no comments so far ?>
-			<?php if ( comments_open() ) : ?>
-				<!-- If comments are open, but there are no comments. -->
-				<p class="nocomments"><?php _e('No comments yet.'); ?></p>
-			<?php else : // comments are closed ?>
-				<!-- If comments are closed. -->
-				<p class="nocomments"><?php _e('Comments are closed.'); ?></p>
-			<?php endif; ?>
-		<?php endif;       
-	} //end if there actually are comments
-} //end if we are to show the previous comments on the preview page
-
+			if ($comments) :
+				eval('?> ' . stripslashes($subpage_general_array['comments_header']));
+				global $comment; //allows us to use WP comment functions
+				foreach ($comments as $comment) : 
+					/* Changes every other comment to a different class */    
+					if ($oddcommentA == $oddcomment) $oddcomment = $oddcommentB;
+					else $oddcomment = $oddcommentA;
+					eval('?> ' . stripslashes($filosofo_cp_class->template_format($subpage_general_array['comments_template'])));
+					if (user_can_edit_post_comments($user_ID, $comment_post_ID)) {
+						$location = get_settings('siteurl') . "/wp-admin/post.php?action=editcomment&amp;comment=$comment->comment_ID";
+						echo " | <a href='$location'>";
+						_e('Edit');
+						echo "</a> |";
+					}
+				endforeach;
+				eval('?> ' . stripslashes($subpage_general_array['comments_footer']));
+			else : // this is displayed if there are no comments so far ?>
+				<?php if ( comments_open() ) : ?>
+					<!-- If comments are open, but there are no comments. -->
+					<p class="nocomments"><?php _e('No comments yet.'); ?></p>
+				<?php else : // comments are closed ?>
+					<!-- If comments are closed. -->
+					<p class="nocomments"><?php _e('Comments are closed.'); ?></p>
+				<?php endif; ?>
+			<?php endif;       
+		} //end if there actually are comments
+	} //end if we are to show the previous comments on the preview page
 } //end display_previous_comments
 }
-
-
-
 
 if ($_GET['captcha_image']) {
 	$filosofo_cp_captcha_array = $filosofo_cp_class->get_option('filosofo_cp_captcha_array');
 	$pos= strpos($_SERVER['REQUEST_URI'], '?');
 	$basename = basename(substr($_SERVER['REQUEST_URI'], 0, $pos));
-	if($basename==basename(__FILE__)) {
-		$filosofo_cp_class->captcha_image($_GET['random_num'],$filosofo_cp_captcha_array['num_length'],$filosofo_cp_captcha_array['circles'],$filosofo_cp_captcha_array['lines'],$filosofo_cp_captcha_array['width'],$filosofo_cp_captcha_array['height'],$filosofo_cp_captcha_array['font'],$filosofo_cp_captcha_array['bgred'],$filosofo_cp_captcha_array['bggreen'],$filosofo_cp_captcha_array['bgblue'],$filosofo_cp_captcha_array['txred'],$filosofo_cp_captcha_array['txgreen'],$filosofo_cp_captcha_array['txblue'],$filosofo_cp_captcha_array['rperc'],$filosofo_cp_captcha_array['gperc'],$filosofo_cp_captcha_array['bperc']);
-	}
+	if($basename==FILOSOFOCPNAME)
+		$filosofo_cp_class->captcha_image($_GET['random_num'],$filosofo_cp_captcha_array['num_length'],$filosofo_cp_captcha_array['circles'],$filosofo_cp_captcha_array['lines'],$filosofo_cp_captcha_array['width'],$filosofo_cp_captcha_array['height'],$filosofo_cp_captcha_array['font'],$filosofo_cp_captcha_array['bgred'],$filosofo_cp_captcha_array['bggreen'],$filosofo_cp_captcha_array['bgblue'],$filosofo_cp_captcha_array['txred'],$filosofo_cp_captcha_array['txgreen'],$filosofo_cp_captcha_array['txblue'],$filosofo_cp_captcha_array['rperc'],$filosofo_cp_captcha_array['gperc'],$filosofo_cp_captcha_array['bperc'],$filosofo_cp_captcha_array['use_font'],$filosofo_cp_captcha_array['font_path'],$filosofo_cp_captcha_array['angle'],$filosofo_cp_captcha_array['x_ord'],$filosofo_cp_captcha_array['y_ord']);
 }
-
 elseif ($_GET['test_num']) {
-	$filosofo_cp_class->captcha_image($_GET['test_num'],$_GET['num_length'],$_GET['cirles'],$_GET['lines'],$_GET['width'],$_GET['height'],$_GET['font'],$_GET['bgred'],$_GET['bggreen'],$_GET['bgblue'],$_GET['txred'],$_GET['txgreen'],$_GET['txblue'],$_GET['rperc'],$_GET['gperc'],$_GET['bperc']);
+	$filosofo_cp_class->captcha_image($_GET['the_num'],$_GET['num_length'],$_GET['circles'],$_GET['lines'],$_GET['width'],$_GET['height'],$_GET['font'],$_GET['bgred'],$_GET['bggreen'],$_GET['bgblue'],$_GET['txred'],$_GET['txgreen'],$_GET['txblue'],$_GET['rperc'],$_GET['gperc'],$_GET['bperc'],$_GET['use_font'],$_GET['font_path'],$_GET['angle'],$_GET['x_ord'],$_GET['y_ord'],$_GET['test_num']);
 }
 //*****************************************************************************
 //  End Captcha stuff
 //*****************************************************************************
 
-
-
 //if someone's submitting a comment (both for previewing and direct submit)
 if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 	$filosofo_cp_subpage_general_array = $filosofo_cp_class->get_option('filosofo_cp_subpage_general_array');
-
-	
-	$filosofo_cp_post_permalink = trim($_POST['filosofo_cp_post_permalink']);
 	$filosofo_cp_post_id = trim($_POST['filosofo_cp_post_id']);
 	$comment_post_ID = (int) trim($_POST['comment_post_ID']);
 	$status = $wpdb->get_row("SELECT post_status, comment_status FROM $wpdb->posts WHERE ID = '$comment_post_ID'");
@@ -1472,7 +1513,6 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 		if ( get_option('comment_registration') )
 			die( __('Sorry, you must be logged in to post a comment.') );
 	endif;
-	
 	$comment_type = '';
 	if ( get_settings('require_name_email') && !$user_ID ) {
 		if ( 6 > strlen($comment_author_email) || '' == $comment_author )
@@ -1531,7 +1571,7 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 		}
 	} //end if someone submits a preview
 	
-	wp_new_comment($commentdata);
+	wp_new_comment( $commentdata );
   
 	setcookie('comment_author_' . COOKIEHASH, stripslashes($comment_author), time() + 30000000, COOKIEPATH);
 	setcookie('comment_author_email_' . COOKIEHASH, stripslashes($comment_author_email), time() + 30000000, COOKIEPATH);
@@ -1561,15 +1601,8 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 else {
 	add_action('options_page_filosofo-comments-preview', array(&$filosofo_cp_class,'options_page'));
 	add_action('admin_menu', array(&$filosofo_cp_class,'add_options_page'),1);
-	add_action('wp_head', array(&$filosofo_cp_class,'alert_scripts'));
-	
+	add_action('wp_head', array(&$filosofo_cp_class,'alert_scripts'));	
 	add_filter('comments_template', array(&$filosofo_cp_class,'replace_comments_file'));
 	add_filter('comments_popup_template', array(&$filosofo_cp_class,'replace_popup_file'));	
 }
-
-
-
-
-
-
 ?>
