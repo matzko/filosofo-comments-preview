@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.7
+Version: 0.71
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -285,11 +285,11 @@ global $filosofo_cp_default_options;
 	$orig_option = $option;
 	//set filosofo_cp_preview_template option to be specific to the current stylesheet 
 	if($option == 'filosofo_cp_preview_template') { 
-		$option = $option . '_' . $this->dirify(get_option('stylesheet'));
+		$option = $option . '_' . $this->dirify(get_stylesheet());
 	}
 	//set filosofo_cp_preview_pop_up_template option to be specific to the current stylesheet
 	elseif($option == 'filosofo_cp_preview_pop_up_template') {
-		$option = $option . '_' . $this->dirify(get_option('stylesheet'));
+		$option = $option . '_' . $this->dirify(get_stylesheet());
 	}
 
 	//check to see if the value has not already been loaded into the options array
@@ -809,7 +809,7 @@ $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 //***************************************************************************************
 function subpage_preview_template() { // prints the preview options subpage 
 global $filosofo_cp_default_options;
-	$current_stylesheet = get_option('stylesheet');
+	$current_stylesheet = get_stylesheet(); 
 	$themetoedit = $this->dirify($current_stylesheet);
 	if (!empty($_POST['themetoedit'])) $themetoedit = $_POST['themetoedit'];
 	$themes = get_themes(); 
@@ -1361,7 +1361,7 @@ function template_format($template) { // replaces template variables such as %co
 	$template = str_replace("%comment_date",'<?php comment_date($subpage_general_array[\'comments_settings_date_format\']); ?>',$template);
 	$template = str_replace("%comment_time",'<?php comment_time($subpage_general_array[\'comments_settings_time_format\']); ?>',$template);
 	$template = str_replace("%comment_type",'<?php comment_type(' . stripslashes($subpage_general_array["comments_settings_comment_type"]) .'); ?>',$template);
-	$template = str_replace("%previewed_author_link",'<?php  $author_filtered = $author; if (empty($author_filtered)) $author_filtered = __(\'Anonymous\'); if (empty($url)) : echo apply_filters(\'comment_author\',$author_filtered); else: $url = apply_filters(\'comment_url\',$url); $link = "<a href=\'$url\' rel=\'external\'>" . apply_filters(\'comment_author\',$author_filtered) . "</a>"; echo apply_filters(\'get_comment_author_link\',$link); endif; ?>',$template);
+	$template = str_replace("%previewed_author_link",'<?php  $author_filtered = $author; if (\'\' == $author_filtered) $author_filtered = __(\'Anonymous\'); if (empty($url)) : echo apply_filters(\'comment_author\',$author_filtered); else: $url = apply_filters(\'comment_url\',$url); $link = "<a href=\'$url\' rel=\'external\'>" . apply_filters(\'comment_author\',$author_filtered) . "</a>"; echo apply_filters(\'get_comment_author_link\',$link); endif; ?>',$template);
 	$template = str_replace("%previewed_author",'<?php echo apply_filters(\'comment_author\',$author); ?>',$template);
 	$template = str_replace("%previewed_buttons",$previewed_buttons,$template);
 	$template = str_replace("%previewed_comment",'<?php echo $fcp_comment; ?>',$template);
@@ -1571,7 +1571,7 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 		}
 	} //end if someone submits a preview
 	
-	wp_new_comment( $commentdata );
+	wp_new_comment($commentdata);
   
 	setcookie('comment_author_' . COOKIEHASH, stripslashes($comment_author), time() + 30000000, COOKIEPATH);
 	setcookie('comment_author_email_' . COOKIEHASH, stripslashes($comment_author_email), time() + 30000000, COOKIEPATH);
