@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.71
+Version: 0.72
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -28,30 +28,26 @@ Author URI: http://www.ilfilosofo.com/blog/
 define("FILOSOFOCPNAME", basename(__FILE__));
 
 // initialize functions
-if(!function_exists(get_settings)) {
+if(!function_exists(get_settings))
 	require_once(realpath('../../wp-config.php'));
-}
-
 //********************************************************************************
 // Default values
 //********************************************************************************
 
-$filosofo_cp_version = .70;
+$filosofo_cp_version = .72;
 
 $comments_template = <<<COMMENTSTEMPLATE
-<li class="%alt_class" id="comment-%comment_id">
-%comment_entire  
-<p><cite>%comment_type <?php _e('by'); ?> <a href="%comment_link">%comment_author</a> &#8212; %comment_date @ <a 
-href="%comment_link">%comment_time</a></cite></p>
+<li class="%alt_class" id="comment-<?php comment_ID() ?>">
+<?php comment_text(); ?>  
+<p><cite><?php comment_type(); ?> <?php _e('by'); ?> <a href="<?php comment_author_url(); ?>"><?php 
+comment_author(); ?></a> 
+&#8212; 
+<?php comment_date(); ?> @ <a href="<?php echo get_comment_link(); ?>"><?php comment_time(); ?></a></cite><?php 
+edit_comment_link('Edit 
+This',' | ',' | '); ?></p>
 </li>
 COMMENTSTEMPLATE;
 $comments_template = str_replace('$','\$',addslashes($comments_template));
-
-if(get_settings('date_format')) $date_format = get_settings('date_format');
-else $date_format = 'F j, Y';
-if(get_settings('time_format')) $time_format = get_settings('time_format');
-else $time_format = 'g:i a';
-$comment_type = '\'' . __('Comment') . '\',\'' .  __('Trackback') . '\',\'' .  __('Pingback') . '\'';
 
 $filosofo_cp_subpage_general_array_default = array('show_prev_button' => 1,
 	'show_submit_button' => 1,
@@ -63,9 +59,6 @@ $filosofo_cp_subpage_general_array_default = array('show_prev_button' => 1,
 	'submit_button_id' => 'submit',
 	'comments_settings_show' => 1,
 	'comments_settings_reverse' => 1,
-	'comments_settings_time_format' => $time_format,
-	'comments_settings_date_format' => $date_format,
-	'comments_settings_comment_type' => $comment_type,
 	'comments_settings_oddcomment_class' => 'alt',
 	'comments_settings_evencomment_class' => 'altB',
 	'comments_header' => '<h3>Previous Comments</h3><ul class="commentlist" id="commentlist">',
@@ -121,7 +114,9 @@ if (!class_exists('filosofo_cp')) {
 class filosofo_cp {
 
 function upgrade () {
-global $filosofo_cp_version;
+global $filosofo_cp_version, $filosofo_cp_default_options;
+	if (.72 > get_option('filosofo_cp_version'))
+		update_option('filosofo_cp_subpage_general_array',$filosofo_cp_default_options['filosofo_cp_subpage_general_array']);
 	update_option('filosofo_cp_version',$filosofo_cp_version);
 } //end upgrade
 
@@ -332,7 +327,7 @@ global $wp_version;
 
 //*********************************************************************
 function options_page() { // configures the Filosofo Comments Preview admin options page
-global $filosofo_cp_default_options;
+global $filosofo_cp_default_options, $filosofo_cp_subpage;
 	//if the form has been submitted to be updated
 	if (isset($_GET['updated']) && ($_GET['updated'] == 'true')) {
 		$possible_options = array_keys($_POST);
@@ -380,27 +375,34 @@ global $filosofo_cp_default_options;
 			}
 		}  //end else options not part of an array
 	}
-
-	$subpage = 1;
-	if (isset($_GET['subpage']))
-		$subpage = $_GET['subpage'];
-	$this->subpage_header($subpage);
-	if ($subpage == 1)
+?><ul id="adminmenu3">
+	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=1" <?php if (1 == $filosofo_cp_subpage) echo 'class="current"'; ?>>General</a></li>
+	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2" <?php if (2 == $filosofo_cp_subpage) echo 'class="current"'; 	 ?>>Preview Page Templates</a></li>
+	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=3" <?php if (3 == $filosofo_cp_subpage) echo 'class="current"'; ?>>Captcha Options</a></li>
+	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=4" <?php if (4 == $filosofo_cp_subpage) echo 'class="current"'; ?>>Set Alerts</a></li>
+</ul>
+<div class="wrap">
+<h2><?php _e('Options for the Filosofo Comments Preview Plugin') ?></h2><?php
+	if (1 == $filosofo_cp_subpage)
 		$this->subpage_general(); 
-	elseif ($subpage == 2)
+	elseif (2 == $filosofo_cp_subpage)
 		$this->subpage_preview_template();
-	elseif ($subpage == 3)
+	elseif (3 == $filosofo_cp_subpage)
 		$this->subpage_captcha();
-	elseif ($subpage == 4)
+	elseif (4 == $filosofo_cp_subpage)
 		$this->subpage_alerts();
+?></div><?php
 } //end options_page function
 
 //***********************************************************************************
-function subpage_header ($selected_tab) { // prints the header for the admin options pages
-$current_tab[$selected_tab] = "class=\"current\"";
+function subpage_header () { // prints the header for the admin options pages
+global $filosofo_cp_subpage;
+	$filosofo_cp_subpage = 1;
+	if (isset($_GET['subpage']))
+		$filosofo_cp_subpage = $_GET['subpage'];
 $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 ?>
-<style>
+<style type="text/css">
 <!--
 #adminmenu3 li {
 	display: inline;
@@ -451,7 +453,7 @@ textarea.filosofo_cp_edittext  {
 }
 
 <?php 
-if (3 == $selected_tab) {
+if (3 == $filosofo_cp_subpage) {
 ?>
 div.slidercasing {
 	margin: 2px;
@@ -509,7 +511,7 @@ div.shader {
 </style>
 
 <?php
-if (3 == $selected_tab) {
+if (3 == $filosofo_cp_subpage) {
 ?>
 
 <script language="JavaScript" type="text/javascript">
@@ -688,17 +690,7 @@ function changePreview() {
 //]]>
 </script>
 
-<?php } ?>
-
-<ul id="adminmenu3">
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=1" <?php echo $current_tab[1] ?>>General</a></li>
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2" <?php echo $current_tab[2] ?>>Preview Page Templates</a></li>
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=3" <?php echo $current_tab[3] ?>>Captcha Options</a></li>
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=4" <?php echo $current_tab[4] ?>>Set Alerts</a></li>
-</ul>
-<div class="wrap">
-<h2><?php _e('Options for the Filosofo Comments Preview Plugin') ?></h2>
-<?php
+<?php } 
 }  //end function subpage_header 
 
 //***********************************************************************************
@@ -706,7 +698,7 @@ function subpage_general()  { // prints the general options subpage
 global $filosofo_cp_default_options; 
 $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 ?> 
-<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=1&amp;updated=true&amp;array=filosofo_cp_subpage_general_array">
+<form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=1&amp;updated=true&amp;array=filosofo_cp_subpage_general_array">
 	<fieldset class="options">
 		<legend><?php _e('Button settings'); ?></legend>
 		<table>
@@ -745,7 +737,7 @@ $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 			</tr>
 			<tr>
 				<td><label for="comments_settings_reverse"><?php _e('In what order should we display the previous comments?'); ?></label></td>
-				<td><select name="comments_settings_reverse" id="filosofo_cp_comments_settings_reverse">
+				<td><select name="comments_settings_reverse" id="comments_settings_reverse">
 					<option value="1" <?php if ($subpage_general_array['comments_settings_reverse']== 1) {echo 'selected="selected"';} ?>><?php _e('Newest to oldest'); ?></option>
 					<option value="0" <?php if ($subpage_general_array['comments_settings_reverse']== 0) {echo 'selected="selected"';} ?>><?php _e('Oldest to newest'); ?></option>
 				</select></td>
@@ -753,39 +745,16 @@ $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 		</table>
 		<hr />
 		<table>
-			<tr><th colspan="3"><?php _e('Miscellaneous Comments Settings'); ?></th></tr>
-			<tr><td><?php _e('The format for a comment\'s date, as called by <code>%comment_date</code> below:'); ?></td><td><input name="comments_settings_date_format" type="text" id="comments_settings_date_format" value="<?php echo $subpage_general_array['comments_settings_date_format']; ?>" size="50" /></td><td rowspan="2"><?php _e('Use the same syntax as the '); ?><a href="http://php.net/date">PHP <code>date()</code> function</a>.</td></tr>
-			<tr><td><?php _e('The format for a comment\'s time, as called by <code>%comment_time</code> below:'); ?></td><td><input name="comments_settings_time_format" type="text" id="comments_settings_time_format" value="<?php echo $subpage_general_array['comments_settings_time_format']; ?>" size="50" /></td></tr>
-			<tr><td><?php _e('The format for a comment\'s type, as called by <code>%comment_type</code> below:'); ?></td><td><input name="comments_settings_comment_type" type="text" id="comments_settings_comment_type" value="<?php echo  htmlspecialchars(stripslashes($subpage_general_array['comments_settings_comment_type'])); ?>" size="50" /></td><td><?php _e('Use the same arguments as for the '); ?><a href="http://codex.wordpress.org/Template_Tags/comment_type">WordPress <code>comment_type()</code> function</a>.</td></tr>
-			<tr><td rowspan="2"><?php _e('Alternating classes for every other comment, called by <code>%alt_class</code> below:'); ?><br /><?php _e('(For styling every other comment)'); ?></td><td><input name="comments_settings_oddcomment_class" type="text" id="comments_settings_oddcomment_class" value="<?php echo $subpage_general_array['comments_settings_oddcomment_class']; ?>" size="15" /></td><td></td></tr>
-			<tr><td><input name="comments_settings_evencomment_class" type="text" id="comments_settings_evencomment_class" value="<?php echo $subpage_general_array['comments_settings_evencomment_class']; ?>" size="15" /></td><td></td></tr>
-		</table>
-		<hr />
-		<table>
 			<tr><th colspan="2"><?php _e('Customize the template for previous comments'); ?></th></tr>
-			<tr>
-				<td colspan="2">
-					<pre>
- %alt_class       - Set above, this class name alternates with every comment
- %author_url      - URL of author or trackback
- %comment_author  - Name left by the commenter
- %comment_entire  - The comment text
- %comment_id      - The WordPress id of the comment
- %comment_link    - Link to the comment
- %comment_date    - Date of comment
- %comment_time    - Time of comment
- %comment_type    - Type of comment; the default is "Comment"
- %userid          - UserID of the commenter
- 					</pre>
-				</td>
-			</tr>
+			<tr><td rowspan="2"><?php _e('Alternate classes for every other comment,<br /> called by inserting <code>%alt_class</code> in the template below:'); ?></td><td><input name="comments_settings_oddcomment_class" type="text" id="comments_settings_oddcomment_class" value="<?php echo $subpage_general_array['comments_settings_oddcomment_class']; ?>" size="15" /></td></tr>
+			<tr><td><input name="comments_settings_evencomment_class" type="text" id="comments_settings_evencomment_class" value="<?php echo $subpage_general_array['comments_settings_evencomment_class']; ?>" size="15" /></td></tr>
 			<tr>
 				<td><label for="comments_header"><?php _e('The markup for the top of the previous comments'); ?></label></td>
 				<td><textarea class="filosofo_cp_edittext" cols="70" rows="3" name="comments_header" id="comments_header"><?php echo htmlspecialchars(stripslashes($subpage_general_array['comments_header'])); ?>
 				</textarea></td>
 			</tr>
 			<tr>
-				<td><label for="comments_template"><?php _e('The template for each previous comment (see above)'); ?></label></td>
+				<td><label for="comments_template"><?php _e('The template for each previous comment'); ?></label></td>
 				<td><textarea class="filosofo_cp_edittext" cols="70" rows="13" name="comments_template" id="comments_template" ><?php echo htmlspecialchars(stripslashes($subpage_general_array['comments_template'])); ?>
 				</textarea></td>
 			</tr>
@@ -814,7 +783,7 @@ global $filosofo_cp_default_options;
 	if (!empty($_POST['themetoedit'])) $themetoedit = $_POST['themetoedit'];
 	$themes = get_themes(); 
 ?>
-<form name="theme" method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2"> 
+<form name="theme" method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2"> 
 	<label for="themetoedit"><?php _e('Select corresponding theme:') ?></label>
 	<select name="themetoedit" id="themetoedit">
 		<?php
@@ -831,12 +800,12 @@ global $filosofo_cp_default_options;
 	</select>
 	<input type="submit" name="submittheme" id="submittheme" value="<?php _e('Select') ?> &raquo;" />
 </form>
-<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2&amp;updated=true">
+<form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2&amp;updated=true">
 <input type="hidden" name="themetoedit" id="themetoedit2" value="<?php echo $themetoedit ?>" />
 	<fieldset class="options">
 		<legend>Comments Preview Template for the <?php echo $themetoedit; ?> Stylesheet</legend>
 		<p><?php _e('You can edit the template below, using these variables, XHTML, or PHP'); ?></p>
-		<p><?php _e('Look for more theme templates or add your own '); ?><a href="http://www.ilfilosofo.com/blog/filosofo-comments-preview-templates/"><?php _e('here'); ?></a>.
+		<p><?php _e('Look for more theme templates or add your own '); ?><a href="http://www.ilfilosofo.com/blog/filosofo-comments-preview-templates/"><?php _e('here'); ?></a>.</p>
 			<pre>
  %previewed_author_link      - The previewed comment's author as a link, if applicable
  %previewed_author           - The previewed comment's author
@@ -849,7 +818,6 @@ global $filosofo_cp_default_options;
  %previewed_url              - The previewed comment author's URL, if applicable
  %previewed_post_title       - The title of the post for which one is leaving a comment
 			</pre>
-		</p>
 		<div class="filosofo_cp_edittext">
 			<textarea class="filosofo_cp_edittext" cols="70" rows="25" name="<?php echo 'filosofo_cp_preview_template_' . $themetoedit ?>" id="<?php echo 'filosofo_cp_preview_template_' . $themetoedit ?>" tabindex="2">
 			<?php echo trim(htmlspecialchars(stripslashes($this->get_option('filosofo_cp_preview_template_' . $themetoedit)))); ?>
@@ -861,7 +829,7 @@ global $filosofo_cp_default_options;
 		<input type="submit" class="filosofo_cp_deletepost" id="deletepost" name="reset" value="<?php _e('Reset this Preview Template to Default') ?> &raquo;" onclick="return confirm('You are about to reset your Preview Template.\n  \'Cancel\' to stop, \'OK\' to reset.')" />
 	</p>
 </form>
-<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2&amp;updated=true">
+<form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2&amp;updated=true">
 	<fieldset class="options">
 		<legend><?php _e('Pop-up Comments Preview Template for the '); ?><?php echo $themetoedit; ?> <?php _e('Stylesheet'); ?></legend>
 		<div class="filosofo_cp_edittext">
@@ -887,7 +855,7 @@ function subpage_captcha() { // prints the captcha options subpage
 		$i++;
 	}
 ?>
-<form method="POST" id="captcha_settings_form" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=3&amp;updated=true&amp;array=filosofo_cp_captcha_array">
+<form method="post" id="captcha_settings_form" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=3&amp;updated=true&amp;array=filosofo_cp_captcha_array">
 	<fieldset class="options">
 		<legend><?php _e('Captcha Settings'); ?></legend>
 		<p><?php _e('A "<acronym title="completely automated public Turing test to tell computers and humans apart">captcha</acronym>" requires commenters to enter a code displayed in an image before submitting their comments.'); ?>
@@ -901,9 +869,9 @@ function subpage_captcha() { // prints the captcha options subpage
 		<p><?php _e('Choosing "No" disables the captcha. <br />Choosing "Yes: on the initial page" requires the captcha once, but it does not require it after the first preview.  <br />Choosing "Yes: on every comment page" requires commenters to enter the captcha code every time they preview or submit.'); ?>
 		</p>
 		<hr />
-		<div style="float:right;"><p><?php _e('Saved Captcha appearance:'); ?></p><br /><img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>?captcha_image=yes&amp;random_num=123456" title="Sample Captcha Image" id="sample_captcha_image" />
+		<div style="float:right;"><p><?php _e('Saved Captcha appearance:'); ?></p><br /><img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>?captcha_image=yes&amp;random_num=123456" title="Sample Captcha Image" id="sample_captcha_image" alt="" />
 		<p><?php _e('Captcha Preview:'); ?></p><br />
-		<img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>?test_num=true&the_num=1234567890<?php $temp_array = $captcha_array; $temp_array['rperc'] = $temp_array['rperc']*100; $temp_array['gperc'] = $temp_array['gperc']*100; $temp_array['bperc'] = $temp_array['bperc']*100; foreach ($temp_array as $key => $value)	echo '&amp;' . $key . '=' . $value; ?>" title="Sample Current Captcha Image" id="current_captcha_image" />
+		<img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>?test_num=true&amp;the_num=1234567890<?php $temp_array = $captcha_array; $temp_array['rperc'] = $temp_array['rperc']*100; $temp_array['gperc'] = $temp_array['gperc']*100; $temp_array['bperc'] = $temp_array['bperc']*100; foreach ($temp_array as $key => $value)	echo '&amp;' . $key . '=' . $value; ?>" title="Sample Current Captcha Image" id="current_captcha_image" alt='' />
 		</div>
 		<div>
 			<?php if (!function_exists('imagestring')) { ?>
@@ -1032,9 +1000,9 @@ function subpage_captcha() { // prints the captcha options subpage
 					</select></td>
 					<td><div id="txblue_casing" class="slidercasing"><div id="txblue_track" class="slidertrack"></div></div></td>
 				</tr>
-				<tr><td><label for="rperc"><?php _e('% Variation in background color of RGB red'); ?></td><td><input name="rperc" type="text" id="rperc" value="<?php echo $captcha_array['rperc']*100; ?>" size="10" /></td><td><div id="rperc_casing" class="slidercasing"><div id="rperc_track" class="slidertrack"></div></div></td></tr>
-				<tr><td><label for="gperc"><?php _e('% Variation in background color of RGB green'); ?></td><td><input name="gperc" type="text" id="gperc" value="<?php echo $captcha_array['gperc']*100; ?>" size="10" /></td><td><div id="gperc_casing" class="slidercasing"><div id="gperc_track" class="slidertrack"></div></div></td></tr>
-				<tr><td><label for="bperc"><?php _e('% Variation in background color of RGB blue'); ?></td><td><input name="bperc" type="text" id="bperc" value="<?php echo $captcha_array['bperc']*100; ?>" size="10" /></td><td><div id="bperc_casing" class="slidercasing"><div id="bperc_track" class="slidertrack"></div></div></td></tr>
+				<tr><td><label for="rperc"><?php _e('% Variation in background color of RGB red'); ?></label></td><td><input name="rperc" type="text" id="rperc" value="<?php echo $captcha_array['rperc']*100; ?>" size="10" /></td><td><div id="rperc_casing" class="slidercasing"><div id="rperc_track" class="slidertrack"></div></div></td></tr>
+				<tr><td><label for="gperc"><?php _e('% Variation in background color of RGB green'); ?></label></td><td><input name="gperc" type="text" id="gperc" value="<?php echo $captcha_array['gperc']*100; ?>" size="10" /></td><td><div id="gperc_casing" class="slidercasing"><div id="gperc_track" class="slidertrack"></div></div></td></tr>
+				<tr><td><label for="bperc"><?php _e('% Variation in background color of RGB blue'); ?></label></td><td><input name="bperc" type="text" id="bperc" value="<?php echo $captcha_array['bperc']*100; ?>" size="10" /></td><td><div id="bperc_casing" class="slidercasing"><div id="bperc_track" class="slidertrack"></div></div></td></tr>
 			</table>
 		</div>
 	</fieldset>
@@ -1052,7 +1020,7 @@ function subpage_alerts() { // prints the alerts options subpage
 global $filosofo_cp_default_options; 
 	$alerts_array = $this->get_option('filosofo_cp_alerts_array');
 ?>
-<form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=4&amp;updated=true&amp;array=filosofo_cp_alerts_array">
+<form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=4&amp;updated=true&amp;array=filosofo_cp_alerts_array">
 	<fieldset class="options">
 		<legend><?php _e('Set Alerts'); ?></legend>
 		<p><?php _e('Alerts allow you to warn your commenters before they submit their comments with required fields left blank.'); ?></p>
@@ -1062,7 +1030,7 @@ global $filosofo_cp_default_options;
 			<option value="0" <?php if ($alerts_array['activate']== 0) {echo 'selected="selected"';} ?>>No</option>
 		</select>
 		<hr />
-		<label for="form_id"><?php _e('The comment form\'s "id" attribute value') ?>: <small><?php _e('(Most likely the default is correct)') ?></small>
+		<label for="form_id"><?php _e('The comment form\'s "id" attribute value') ?>: <small><?php _e('(Most likely the default is correct)') ?></small></label>
 		<input name="form_id" type="text" id="form_id" value="<?php echo htmlspecialchars(stripslashes($alerts_array['form_id'])); ?>"  size="20" />
 		<hr />
 		<table>
@@ -1075,10 +1043,10 @@ global $filosofo_cp_default_options;
 				</td>
 				<td><label for="name_text"><?php _e('Text for warning:'); ?></label></td>
 				<td><input name="name_text" type="text" id="name_text" value="<?php echo htmlspecialchars(stripslashes($alerts_array['name_text'])); ?>" size="50"  /></td>
-				<td><label for="name_id"><?php _e('The "Name" field\'s "id" attribute value') ?>:<br /><small><?php _e('(Most likely the default is correct)') ?></small></td>
+				<td><label for="name_id"><?php _e('The "Name" field\'s "id" attribute value') ?>:<br /><small><?php _e('(Most likely the default is correct)') ?></small></label></td>
 				<td><input name="name_id" type="text" id="name_id" value="<?php echo htmlspecialchars(stripslashes($alerts_array['name_id'])); ?>" size="10"  /></td>
 			</tr>
-			<tr><td><label for="alerts_email"><?php _e('Alert commenters that they have not filled in the "Email" field?'); ?></label></td>
+			<tr><td><label for="email"><?php _e('Alert commenters that they have not filled in the "Email" field?'); ?></label></td>
 				<td>
 					<select name="email" id="email" >
 						<option value="1" <?php if ($alerts_array['email']== 1) {echo 'selected="selected"';} ?>>Yes</option>
@@ -1087,7 +1055,7 @@ global $filosofo_cp_default_options;
 				</td>
 				<td><label for="email_text"><?php _e('Text for warning:'); ?></label></td>
 				<td><input name="email_text" type="text" id="email_text" value="<?php echo htmlspecialchars(stripslashes($alerts_array['email_text'])); ?>" size="50"  /></td>
-				<td><label for="email_id"><?php _e('The "Email" field\'s "id" attribute value') ?>:<br /><small><?php _e('(Most likely the default is correct)') ?></small></td>
+				<td><label for="email_id"><?php _e('The "Email" field\'s "id" attribute value') ?>:<br /><small><?php _e('(Most likely the default is correct)') ?></small></label></td>
 				<td><input name="email_id" type="text" id="email_id" value="<?php echo htmlspecialchars(stripslashes($alerts_array['email_id'])); ?>" size="10"  /></td>
 			</tr>
 			<tr><td><label for="captcha"><?php _e('Alert commenters that they have not filled in the "Chaptcha" field code?'); ?><br /><small><?php _e('(This applies only if you\'ve activated the '); ?><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=3"><?php _e('captcha feature'); ?></a>)</small></label></td>
@@ -1099,7 +1067,7 @@ global $filosofo_cp_default_options;
 				</td>
 				<td><label for="captcha_text"><?php _e('Text for warning:'); ?></label></td>
 				<td><input name="captcha_text" type="text" id="captcha_text" value="<?php echo htmlspecialchars(stripslashes($alerts_array['captcha_text'])); ?>" size="50"  /></td>
-				<td><label for="captcha_id"><?php _e('The "Captcha" field\'s "id" attribute value') ?>:<br /><small><?php _e('(Most likely the default is correct)') ?></small></td>
+				<td><label for="captcha_id"><?php _e('The "Captcha" field\'s "id" attribute value') ?>:<br /><small><?php _e('(Most likely the default is correct)') ?></small></label></td>
 				<td><input name="captcha_id" type="text" id="captcha_id" value="<?php echo htmlspecialchars(stripslashes($alerts_array['captcha_id'])); ?>" size="10"  /></td>
 			</tr>
 		</table>
@@ -1339,7 +1307,7 @@ return $comment;
 } //end filter_comment
 
 //*****************************************************************************
-function template_format($template) { // replaces template variables such as %comment_entire with PHP, etc.
+function template_format($template) { // replaces template variables with PHP, etc.
 // arg: template--the text through which to search for replacable variables
 	$subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 	$previewed_buttons = '<?php $filosofo_cp_class->display_captcha(); ?>
@@ -1353,14 +1321,6 @@ function template_format($template) { // replaces template variables such as %co
 	if (isset($_POST['filosofo_cp_is_popup']))
 		$previewed_buttons = '<input type="hidden" name="filosofo_cp_is_popup" id="filosofo_cp_is_popup" value="true" />' . $previewed_buttons;
 	$template = str_replace("%alt_class",'<?php echo $oddcomment; ?>', $template);
-	$template = str_replace("%author_url",'<?php comment_author_url(); ?>',$template);
-	$template = str_replace("%comment_author",'<?php comment_author(); ?>',$template);
-	$template = str_replace("%comment_entire",'<?php echo $filosofo_cp_class->filter_comment($comment->comment_content); ?>',$template);
-	$template = str_replace("%comment_id",'<?php echo $comment->comment_ID; ?>',$template);
-	$template = str_replace("%comment_link",'<?php echo get_comment_link(); ?>',$template);
-	$template = str_replace("%comment_date",'<?php comment_date($subpage_general_array[\'comments_settings_date_format\']); ?>',$template);
-	$template = str_replace("%comment_time",'<?php comment_time($subpage_general_array[\'comments_settings_time_format\']); ?>',$template);
-	$template = str_replace("%comment_type",'<?php comment_type(' . stripslashes($subpage_general_array["comments_settings_comment_type"]) .'); ?>',$template);
 	$template = str_replace("%previewed_author_link",'<?php  $author_filtered = $author; if (\'\' == $author_filtered) $author_filtered = __(\'Anonymous\'); if (empty($url)) : echo apply_filters(\'comment_author\',$author_filtered); else: $url = apply_filters(\'comment_url\',$url); $link = "<a href=\'$url\' rel=\'external\'>" . apply_filters(\'comment_author\',$author_filtered) . "</a>"; echo apply_filters(\'get_comment_author_link\',$link); endif; ?>',$template);
 	$template = str_replace("%previewed_author",'<?php echo apply_filters(\'comment_author\',$author); ?>',$template);
 	$template = str_replace("%previewed_buttons",$previewed_buttons,$template);
@@ -1370,7 +1330,6 @@ function template_format($template) { // replaces template variables such as %co
 	$template = str_replace("%previewed_prev_comments",'<?php $subpage_general_array = $filosofo_cp_class->get_option(\'filosofo_cp_subpage_general_array\'); if ($subpage_general_array[\'comments_settings_show\'] == 1) { echo filosofo_cp_display_previous_comments(); } ?>',$template);
 	$template = str_replace("%previewed_raw_comment",'<?php echo stripslashes($raw_comment); ?>',$template);
 	$template = str_replace("%previewed_url",'<?php echo apply_filters(\'comment_url\',$url); ?>',$template);
-	$template = str_replace("%userid",'<?php echo $comment->user_id; ?>',$template);
 	$template = str_replace("%previewed_post_title",'<?php echo apply_filters(\'the_title\',get_the_title($filosofo_cp_post_id)); ?>',$template);
 return $template;
 } //end template_format
@@ -1420,7 +1379,7 @@ if((!get_option('filosofo_cp_version')) || ($filosofo_cp_version > get_option('f
 if(!function_exists('filosofo_cp_display_previous_comments')) {
 //*****************************************************************************
 function filosofo_cp_display_previous_comments() { // displays the previous comments in the preview
-global $filosofo_cp_class, $wpdb, $filosofo_cp_post_id, $user_ID, $comment_post_ID;
+global $filosofo_cp_class, $wpdb, $filosofo_cp_post_id, $user_ID, $comment_post_ID, $post;
 	$subpage_general_array = $filosofo_cp_class->get_option('filosofo_cp_subpage_general_array');
 	//if we are to show the previous comments on the preview page
 	if($subpage_general_array['comments_settings_show']) {
@@ -1443,13 +1402,8 @@ global $filosofo_cp_class, $wpdb, $filosofo_cp_post_id, $user_ID, $comment_post_
 					/* Changes every other comment to a different class */    
 					if ($oddcommentA == $oddcomment) $oddcomment = $oddcommentB;
 					else $oddcomment = $oddcommentA;
+					$post->ID = $comment_post_ID;
 					eval('?> ' . stripslashes($filosofo_cp_class->template_format($subpage_general_array['comments_template'])));
-					if (user_can_edit_post_comments($user_ID, $comment_post_ID)) {
-						$location = get_settings('siteurl') . "/wp-admin/post.php?action=editcomment&amp;comment=$comment->comment_ID";
-						echo " | <a href='$location'>";
-						_e('Edit');
-						echo "</a> |";
-					}
 				endforeach;
 				eval('?> ' . stripslashes($subpage_general_array['comments_footer']));
 			else : // this is displayed if there are no comments so far ?>
@@ -1504,6 +1458,8 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 	$comment_author_url   = trim($_POST['url']);
 	$comment_content      = trim($_POST['comment']);
 	// If the user is logged in
+	if(!function_exists(get_currentuserinfo) && defined('ABSPATH') && defined('WPINC'))
+		require_once(ABSPATH . WPINC . '/pluggable-functions.php');
 	get_currentuserinfo();
 	if ( $user_ID ) :
 		$comment_author       = addslashes($user_identity);
@@ -1601,6 +1557,7 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 else {
 	add_action('options_page_filosofo-comments-preview', array(&$filosofo_cp_class,'options_page'));
 	add_action('admin_menu', array(&$filosofo_cp_class,'add_options_page'),1);
+	add_action('admin_head', array(&$filosofo_cp_class,'subpage_header'));
 	add_action('wp_head', array(&$filosofo_cp_class,'alert_scripts'));	
 	add_filter('comments_template', array(&$filosofo_cp_class,'replace_comments_file'));
 	add_filter('comments_popup_template', array(&$filosofo_cp_class,'replace_popup_file'));	
