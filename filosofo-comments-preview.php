@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.72
+Version: 0.73
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -34,17 +34,14 @@ if(!function_exists(get_settings))
 // Default values
 //********************************************************************************
 
-$filosofo_cp_version = .72;
+$filosofo_cp_version = .73;
 
 $comments_template = <<<COMMENTSTEMPLATE
 <li class="%alt_class" id="comment-<?php comment_ID() ?>">
 <?php comment_text(); ?>  
-<p><cite><?php comment_type(); ?> <?php _e('by'); ?> <a href="<?php comment_author_url(); ?>"><?php 
-comment_author(); ?></a> 
-&#8212; 
+<p><cite><?php comment_type(); ?> <?php _e('by'); ?> <a href="<?php comment_author_url(); ?>"><?php comment_author(); ?></a> &#8212; 
 <?php comment_date(); ?> @ <a href="<?php echo get_comment_link(); ?>"><?php comment_time(); ?></a></cite><?php 
-edit_comment_link('Edit 
-This',' | ',' | '); ?></p>
+edit_comment_link('Edit This',' | ',' | '); ?></p>
 </li>
 COMMENTSTEMPLATE;
 $comments_template = str_replace('$','\$',addslashes($comments_template));
@@ -82,6 +79,7 @@ $filosofo_cp_captcha_array_default = array('show_captcha' => 0,
 	'captcha_label' => 'Enter the code that you see in the image',
 	'salt' => $salt,
 	'num_length' => 6,
+	'field_length' => 28,
 	'circles' => 5,
 	'lines' => 1,
 	'width' => 100,
@@ -719,8 +717,8 @@ $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 		</table>
 		<table>
 			<tr><td></td><th><?php _e('Button Text'); ?></th><th><?php _e('Button Class'); ?></th><th><?php _e('Button Id'); ?></th></tr>
-			<tr><th><?php _e('Preview Button'); ?></th><td><input name="prev_button_text" type="text" id="prev_button_text" value="<?php echo $subpage_general_array['prev_button_text'] ?>" size="15" /></td><td><input name="prev_button_class" type="text" id="prev_button_class" value="<?php echo $subpage_general_array['prev_button_class'] ?>" size="15" /></td><td><input name="prev_button_id" type="text" id="prev_button_id" value="<?php echo $subpage_general_array['prev_button_id'] ?>" size="15" /></td></tr>
-			<tr><th><?php _e('Submit Button'); ?></th><td><input name="submit_button_text" type="text" id="submit_button_text" value="<?php echo $subpage_general_array['submit_button_text']; ?>" size="15" /></td><td><input name="submit_button_class" type="text" id="submit_button_class" value="<?php echo $subpage_general_array['submit_button_class']; ?>" size="15" /></td><td><input name="submit_button_id" type="text" id="submit_button_id" value="<?php echo $subpage_general_array['submit_button_id']; ?>" size="15" /></td></tr>
+			<tr><th><?php _e('Preview Button'); ?></th><td><input name="prev_button_text" type="text" id="prev_button_text" value="<?php echo htmlspecialchars(stripslashes($subpage_general_array['prev_button_text'])); ?>" size="15" /></td><td><input name="prev_button_class" type="text" id="prev_button_class" value="<?php echo $subpage_general_array['prev_button_class'] ?>" size="15" /></td><td><input name="prev_button_id" type="text" id="prev_button_id" value="<?php echo $subpage_general_array['prev_button_id'] ?>" size="15" /></td></tr>
+			<tr><th><?php _e('Submit Button'); ?></th><td><input name="submit_button_text" type="text" id="submit_button_text" value="<?php echo htmlspecialchars(stripslashes($subpage_general_array['submit_button_text'])); ?>" size="15" /></td><td><input name="submit_button_class" type="text" id="submit_button_class" value="<?php echo $subpage_general_array['submit_button_class']; ?>" size="15" /></td><td><input name="submit_button_id" type="text" id="submit_button_id" value="<?php echo $subpage_general_array['submit_button_id']; ?>" size="15" /></td></tr>
 		</table>
 		
 		
@@ -879,8 +877,9 @@ function subpage_captcha() { // prints the captcha options subpage
 			<?php } ?>
 			<table>
 				<tr><th colspan="3"><?php _e('Fine-tune the captcha features'); ?></th></tr>
-				<tr><td><label for="captcha_label"><?php _e('The label for the captcha text box'); ?></label></td><td colspan="2"><input name="captcha_label" type="text" id="captcha_label" value="<?php echo $captcha_array['captcha_label']; ?>" size="50" /></td></tr>
+				<tr><td><label for="captcha_label"><?php _e('The label for the captcha text box'); ?></label></td><td colspan="2"><input name="captcha_label" type="text" id="captcha_label" value="<?php echo htmlspecialchars(stripslashes($captcha_array['captcha_label'])); ?>" size="50" /></td></tr>
                     		<tr><td><label for="num_length"><?php _e('The length of the number that appears'); ?></label></td><td colspan="2"><input name="num_length" type="text" id="num_length" value="<?php echo $captcha_array['num_length']; ?>" size="10" /></td></tr>
+				<tr><td><label for="field_length"><?php _e('The length of the captcha text box'); ?></label></td><td colspan="2"><input name="field_length" type="text" id="field_length" value="<?php echo $captcha_array['field_length']; ?>" size="10" /></td></tr>
 				<tr><td><label for="circles"><?php _e('The number of background ellipses'); ?></label></td><td colspan="2"><input name="circles" type="text" id="circles" value="<?php echo $captcha_array['circles']; ?>" size="5" /></td></tr>
 				<tr><td><label for="lines"><?php _e('The number of horizontal lines'); ?></label></td><td colspan="2"><input name="lines" type="text" id="lines" value="<?php echo $captcha_array['lines']; ?>" size="5" /></td></tr>
 				<tr><td><label for="width"><?php _e('The width in pixels of the captcha image'); ?></label></td><td colspan="2"><input name="width" type="text" id="width" value="<?php echo $captcha_array['width']; ?>" size="10" /></td></tr>
@@ -1175,10 +1174,10 @@ function submitbuttons($page = 'standard') { // prints out the submit buttons an
 	}
 	if ($subpage_general_array['show_prev_button']) { ?>
 		<input type="hidden" name="filosofo_cp_post_id" id="filosofo_cp_post_id" value="<?php the_ID() ?>" />
-		<input class="<?php echo $subpage_general_array['prev_button_class']; ?>" name="submit" id="<?php echo $subpage_general_array['prev_button_id']; ?>" type="submit" tabindex="5" value="<?php echo $subpage_general_array['prev_button_text']; ?>" /><?php 
+		<input class="<?php echo $subpage_general_array['prev_button_class']; ?>" name="submit" id="<?php echo $subpage_general_array['prev_button_id']; ?>" type="submit" tabindex="5" value="<?php echo stripslashes($subpage_general_array['prev_button_text']); ?>" /><?php 
 	} 
 	if ($subpage_general_array['show_submit_button']) { ?>
-		<input class="<?php echo $subpage_general_array['submit_button_class']; ?>" name="submit" id="<?php echo $subpage_general_array['submit_button_id']; ?>" type="submit" tabindex="6" value="<?php echo $subpage_general_array['submit_button_text']; ?>" style="font-weight: bold;" /><?php
+		<input class="<?php echo $subpage_general_array['submit_button_class']; ?>" name="submit" id="<?php echo $subpage_general_array['submit_button_id']; ?>" type="submit" tabindex="6" value="<?php echo stripslashes($subpage_general_array['submit_button_text']); ?>" style="font-weight: bold;" /><?php
 	}
 } //end submitbuttons
 
@@ -1210,9 +1209,9 @@ function display_captcha($page=false) { // displays the captcha and associated i
 		//if the captcha should show up on every page
 		if (($captcha_array['show_captcha'] == 2) || ($page != false)) { ?>
 			<input type="hidden" name="filosofo_cp_captcha_number" id="filosofo_cp_captcha_number" value="<?php echo $number; ?>" />
-			<img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>?captcha_image=yes&amp;random_num=<?php echo $number; ?>" alt="<?php echo $captcha_array['captcha_label']; ?>" title="<?php echo $captcha_array['captcha_label']; ?>" />
-			<label for="<?php echo $alerts_array['captcha_id']; ?>"><?php echo $captcha_array['captcha_label']; ?></label>
-			<input type="text" name="<?php echo $alerts_array['captcha_id']; ?>" id="<?php echo $alerts_array['captcha_id']; ?>" size="28" /><?php
+			<img src="<?php echo get_option('siteurl'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>?captcha_image=yes&amp;random_num=<?php echo $number; ?>" alt="<?php echo stripslashes($captcha_array['captcha_label']); ?>" title="<?php echo stripslashes($captcha_array['captcha_label']); ?>" />
+			<label for="<?php echo $alerts_array['captcha_id']; ?>"><?php echo stripslashes($captcha_array['captcha_label']); ?></label>
+			<input type="text" name="<?php echo $alerts_array['captcha_id']; ?>" id="<?php echo $alerts_array['captcha_id']; ?>" size="<?php echo $captcha_array['field_length']; ?>" /><?php
 		} //end if captcha should show up on every page
 		//elseif captcha should just show up the first time
 		elseif (!$page) {
@@ -1316,8 +1315,8 @@ function template_format($template) { // replaces template variables with PHP, e
      	<input type="hidden" name="comment_post_ID" value="<?php echo $comment_post_ID; ?>" />
   	<input type="hidden" name="redirect_to" value="<?php echo $redirect_to; ?>" />
   	<input type="hidden" name="filosofo_cp_post_id" id="filosofo_cp_post_id" value="<?php echo $filosofo_cp_post_id ?>" />
-  	<input class="button" name="submit" id="preview" type="submit" tabindex="5" value="<?php echo $subpage_general_array[\'prev_button_text\']; ?>" />
-  	<input class="button" name="submit" id="submit" type="submit" tabindex="6" value="<?php echo $subpage_general_array[\'submit_button_text\']; ?>" style="font-weight: bold;" />';
+  	<input class="button" name="submit" id="preview" type="submit" tabindex="5" value="<?php echo stripslashes($subpage_general_array[\'prev_button_text\']); ?>" />
+  	<input class="button" name="submit" id="submit" type="submit" tabindex="6" value="<?php echo stripslashes($subpage_general_array[\'submit_button_text\']); ?>" style="font-weight: bold;" />';
 	if (isset($_POST['filosofo_cp_is_popup']))
 		$previewed_buttons = '<input type="hidden" name="filosofo_cp_is_popup" id="filosofo_cp_is_popup" value="true" />' . $previewed_buttons;
 	$template = str_replace("%alt_class",'<?php echo $oddcomment; ?>', $template);
