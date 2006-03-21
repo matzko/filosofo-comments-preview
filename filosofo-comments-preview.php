@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.73
+Version: 0.74
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -232,7 +232,7 @@ global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user
 	return __FILE__;
 }  //end function replace_comments_file
 
-var $evalonce = 0;
+var $evalonce = 1;
 //********************************************************************************
 function replace_popup_file ($popup_template) {// replaces the popup form values with the required ones
 global $wp_query, $withcomments, $post, $posts, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity;
@@ -1491,7 +1491,7 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 
 	$commentdata = compact('comment_post_ID', 'comment_author', 'comment_author_email', 'comment_author_url', 'comment_content', 'comment_type', 'user_ID');
 	//if someone submits a preview
-	if($_POST['submit'] == $filosofo_cp_subpage_general_array['prev_button_text']){
+	if(htmlentities($_POST['submit'],ENT_COMPAT,"UTF-8") == stripslashes($filosofo_cp_subpage_general_array['prev_button_text'])) {
 		$raw_comment = htmlspecialchars($comment_content);
 		$fcp_comment = $filosofo_cp_class->filter_comment($comment_content);
 		//make logged in users show up in the preview
