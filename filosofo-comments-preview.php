@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.74
+Version: 0.75
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -202,7 +202,7 @@ return $header . $divs[0] . $main_template . $divs[1] . $footer;
 function replace_comments_file ($comments_path) { // replaces the comments.php template values with the required ones
 // works only on versions of WP > 1.5, which have the 'comments_template' filter hook
 global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity;
-
+	if ( !file_exists($comments_path) ) $comments_path = get_theme_root() . '/default/comments.php';
 	//make up for variables that aren't passed and aren't global
 	if ( is_single() || is_page() || $withcomments ) :
 		$req = get_settings('require_name_email');
@@ -237,6 +237,7 @@ var $evalonce = 1;
 function replace_popup_file ($popup_template) {// replaces the popup form values with the required ones
 global $wp_query, $withcomments, $post, $posts, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity;
 if (1 == $this->evalonce) {
+	if ( !file_exists($popup_template) ) $popup_template = get_theme_root() . '/default/comments-popup.php';
 	//make up for variables that aren't passed and aren't global
 	if ( is_single() || is_page() || $withcomments ) :
 		$req = get_settings('require_name_email');
