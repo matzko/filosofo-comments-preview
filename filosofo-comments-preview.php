@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.75
+Version: 0.76a
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -34,7 +34,7 @@ if(!function_exists(get_settings))
 // Default values
 //********************************************************************************
 
-$filosofo_cp_version = .73;
+$filosofo_cp_version = .76;
 
 $comments_template = <<<COMMENTSTEMPLATE
 <li class="%alt_class" id="comment-<?php comment_ID() ?>">
@@ -74,10 +74,9 @@ $filosofo_cp_alerts_array_default = array('activate' => 0,
 	'captcha_id' => 'captcha_field',
 	'captcha_text' => 'Don\'t forget to fill in the \'captcha\' security code before submitting your comment.');
 
-$salt = 'filosofo_cp' . rand();
 $filosofo_cp_captcha_array_default = array('show_captcha' => 0,
 	'captcha_label' => 'Enter the code that you see in the image',
-	'salt' => $salt,
+	'salt' => 'filosofo_cp' . rand(),
 	'num_length' => 6,
 	'field_length' => 28,
 	'circles' => 5,
@@ -107,7 +106,6 @@ $filosofo_cp_default_options = array('filosofo_cp_subpage_general_array' => $fil
 // end default values
 //********************************************************************************
 
-
 if (!class_exists('filosofo_cp')) {
 class filosofo_cp {
 
@@ -122,7 +120,7 @@ function create_template($kind = 'standard') {
 	if ('popup' == $kind) {
 		$template_text = $this->get_the_files_content( TEMPLATEPATH . '/comments-popup.php');
 		if ('' == $template_text)
-			$template_text = $this->get_the_files_content( ABSPATH . '/wp-content/themes/default/comments-popup.php');
+			$template_text = $this->get_the_files_content( get_theme_root() . '/default/comments-popup.php');
 	}
 	else $template_text = $this->get_the_files_content( TEMPLATEPATH . '/index.php');
 
@@ -196,9 +194,6 @@ TEMPLATE;
 return $header . $divs[0] . $main_template . $divs[1] . $footer;
 }
 
-
-
-//********************************************************************************
 function replace_comments_file ($comments_path) { // replaces the comments.php template values with the required ones
 // works only on versions of WP > 1.5, which have the 'comments_template' filter hook
 global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity;
@@ -226,14 +221,12 @@ global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user
 	if(!preg_match('/filosofo_cp_submitbuttons/',$comments_template)) 
 		$comments_template = preg_replace('/<input.*submit.*\/>/i','<?php $this->submitbuttons(\'standard\') ?>',$comments_template);
 
-
 	eval('?>' . $comments_template );
 
 	return __FILE__;
 }  //end function replace_comments_file
 
 var $evalonce = 1;
-//********************************************************************************
 function replace_popup_file ($popup_template) {// replaces the popup form values with the required ones
 global $wp_query, $withcomments, $post, $posts, $wpdb, $id, $comment, $user_login, $user_ID, $user_identity;
 if (1 == $this->evalonce) {
@@ -266,16 +259,9 @@ $this->evalonce = $this->evalonce + 1;
 	return __FILE__;
 }  //end function replace_popup_file
 
-//********************************************************************************
-// options page stuff
-//********************************************************************************
 var $options = array();
-
-//********************************************************************************
 function get_option($option) { // Looks up the setting for the name of the $option argument;  if it's not there it uses the default
-// calls: add_option, update_option, get_option
 global $filosofo_cp_default_options;
-
 	$orig_option = $option;
 	//set filosofo_cp_preview_template option to be specific to the current stylesheet 
 	if($option == 'filosofo_cp_preview_template') { 
@@ -317,14 +303,12 @@ global $filosofo_cp_default_options;
 	return $this->options[$option];
 } //end get_option
 
-//**********************************************************************
 function add_options_page() { // adds the plugin options page to the admin options menu
 global $wp_version;
 	if (function_exists('add_options_page'))
 		add_options_page('Filosofo Comments Preview Plugin', 'Comments Preview', 6, __FILE__,array(&$this,'options_page'));
 } //end add_options_page
 
-//*********************************************************************
 function options_page() { // configures the Filosofo Comments Preview admin options page
 global $filosofo_cp_default_options, $filosofo_cp_subpage;
 	//if the form has been submitted to be updated
@@ -374,31 +358,27 @@ global $filosofo_cp_default_options, $filosofo_cp_subpage;
 			}
 		}  //end else options not part of an array
 	}
-?><ul id="adminmenu3">
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=1" <?php if (1 == $filosofo_cp_subpage) echo 'class="current"'; ?>>General</a></li>
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2" <?php if (2 == $filosofo_cp_subpage) echo 'class="current"'; 	 ?>>Preview Page Templates</a></li>
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=3" <?php if (3 == $filosofo_cp_subpage) echo 'class="current"'; ?>>Captcha Options</a></li>
-	<li><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=4" <?php if (4 == $filosofo_cp_subpage) echo 'class="current"'; ?>>Set Alerts</a></li>
-</ul>
+$subpage_array = array(1 => __('General'), 2 => __('Preview Page Templates'), 3 => __('Captcha Options'), 4 => __('Set Alerts'));
+?><ul id="adminmenu3"><?php
+	foreach ($subpage_array as $id => $subpage_name) {
+		echo '<li><a href="' . $_SERVER['PHP_SELF'] . '?page=' . FILOSOFOCPNAME . '&amp;subpage=' . $id . '"'; 
+		if ($id == $filosofo_cp_subpage) echo 'class="current"'; 
+		echo ">$subpage_name</a></li>\n";
+	}
+?></ul>
 <div class="wrap">
 <h2><?php _e('Options for the Filosofo Comments Preview Plugin') ?></h2><?php
-	if (1 == $filosofo_cp_subpage)
-		$this->subpage_general(); 
-	elseif (2 == $filosofo_cp_subpage)
-		$this->subpage_preview_template();
-	elseif (3 == $filosofo_cp_subpage)
-		$this->subpage_captcha();
-	elseif (4 == $filosofo_cp_subpage)
-		$this->subpage_alerts();
+	if (1 == $filosofo_cp_subpage) $this->subpage_general(); 
+	elseif (2 == $filosofo_cp_subpage) $this->subpage_preview_template();
+	elseif (3 == $filosofo_cp_subpage) $this->subpage_captcha();
+	elseif (4 == $filosofo_cp_subpage) $this->subpage_alerts();
 ?></div><?php
 } //end options_page function
 
-//***********************************************************************************
 function subpage_header () { // prints the header for the admin options pages
 global $filosofo_cp_subpage;
 	$filosofo_cp_subpage = 1;
-	if (isset($_GET['subpage']))
-		$filosofo_cp_subpage = $_GET['subpage'];
+	if (isset($_GET['subpage'])) $filosofo_cp_subpage = $_GET['subpage'];
 $captcha_array = $this->get_option('filosofo_cp_captcha_array');
 ?>
 <style type="text/css">
@@ -502,17 +482,12 @@ div.shader {
 	margin-top: 1px;
 	margin-left: 2px;
 }
-
-
 <?php } ?>
-
 -->
 </style>
-
 <?php
 if (3 == $filosofo_cp_subpage) {
 ?>
-
 <script language="JavaScript" type="text/javascript">
 //<![CDATA[
 function findPosX(obj) {
@@ -688,11 +663,9 @@ function changePreview() {
 }
 //]]>
 </script>
-
 <?php } 
 }  //end function subpage_header 
 
-//***********************************************************************************
 function subpage_general()  { // prints the general options subpage
 global $filosofo_cp_default_options; 
 $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
@@ -763,8 +736,7 @@ $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 				</textarea></td>
 			</tr>
 		</table>
-		<p><?php _e('Edit the complete template for this theme at the '); ?><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2"><?php _e('template page'); 
-?></a>.</p>
+		<p><?php _e('Edit the complete template for this theme at the '); ?><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=2"><?php _e('template page'); ?></a>.</p>
 	</fieldset>
 	<p class="submit">
 		<input type="submit" name="Submit" value="<?php _e('Save General Comments Preview Options') ?> &raquo;" />
@@ -774,7 +746,6 @@ $subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 <?php
 } //end function subpage_general
 
-//***************************************************************************************
 function subpage_preview_template() { // prints the preview options subpage 
 global $filosofo_cp_default_options;
 	$current_stylesheet = get_stylesheet(); 
@@ -789,7 +760,6 @@ global $filosofo_cp_default_options;
 		foreach ($themes as $a_theme) {
 			$theme_name = $a_theme['Name'];
 			$theme_id = $this->dirify($a_theme['Stylesheet']);
-			//if ($theme_name == $theme) $selected = " selected='selected'";
 			if ($theme_id == $themetoedit) $selected = " selected='selected'";
 			else $selected = '';
 			$theme_name = wp_specialchars($theme_name, true);
@@ -845,7 +815,6 @@ global $filosofo_cp_default_options;
 <?php
 } //end function subpage_preview_template
 
-//********************************************************************************
 function subpage_captcha() { // prints the captcha options subpage
 	$captcha_array = $this->get_option('filosofo_cp_captcha_array');
 	$i = 1;
@@ -878,16 +847,21 @@ function subpage_captcha() { // prints the captcha options subpage
 			<?php } ?>
 			<table>
 				<tr><th colspan="3"><?php _e('Fine-tune the captcha features'); ?></th></tr>
-				<tr><td><label for="captcha_label"><?php _e('The label for the captcha text box'); ?></label></td><td colspan="2"><input name="captcha_label" type="text" id="captcha_label" value="<?php echo htmlspecialchars(stripslashes($captcha_array['captcha_label'])); ?>" size="50" /></td></tr>
-                    		<tr><td><label for="num_length"><?php _e('The length of the number that appears'); ?></label></td><td colspan="2"><input name="num_length" type="text" id="num_length" value="<?php echo $captcha_array['num_length']; ?>" size="10" /></td></tr>
-				<tr><td><label for="field_length"><?php _e('The length of the captcha text box'); ?></label></td><td colspan="2"><input name="field_length" type="text" id="field_length" value="<?php echo $captcha_array['field_length']; ?>" size="10" /></td></tr>
-				<tr><td><label for="circles"><?php _e('The number of background ellipses'); ?></label></td><td colspan="2"><input name="circles" type="text" id="circles" value="<?php echo $captcha_array['circles']; ?>" size="5" /></td></tr>
-				<tr><td><label for="lines"><?php _e('The number of horizontal lines'); ?></label></td><td colspan="2"><input name="lines" type="text" id="lines" value="<?php echo $captcha_array['lines']; ?>" size="5" /></td></tr>
-				<tr><td><label for="width"><?php _e('The width in pixels of the captcha image'); ?></label></td><td colspan="2"><input name="width" type="text" id="width" value="<?php echo $captcha_array['width']; ?>" size="10" /></td></tr>
-				<tr><td><label for="height"><?php _e('The height in pixels of the captcha image'); ?></label></td><td colspan="2"><input name="height" type="text" id="height" value="<?php echo $captcha_array['height']; ?>" size="10" /></td></tr>
-				<tr><td><label for="x_ord"><?php _e('The x-coordinate of the image text'); ?></label></td><td colspan="2"><input name="x_ord" type="text" id="x_ord" value="<?php echo $captcha_array['x_ord']; ?>" size="10" /></td></tr>
-				<tr><td><label for="y_ord"><?php _e('The y-coordinate of the image text'); ?></label></td><td colspan="2"><input name="y_ord" type="text" id="y_ord" value="<?php echo $captcha_array['y_ord']; ?>" size="10" /></td></tr>
-				<?php if (!function_exists('imagettftext')) { 
+				<?php $captcha_features = array('captcha_label' => __('The label for the captcha text box'),
+				'num_length' => __('The length of the number that appears'),
+				'field_length' => __('The length of the captcha text box'),
+				'circles' => __('The number of background ellipses'),
+				'lines' => __('The number of horizontal lines'),
+				'width' => __('The width in pixels of the captcha image'),
+				'height' => __('The height in pixels of the captcha image'),
+				'x_ord' => __('The x-coordinate of the image text'),
+				'y_ord' => __('The y-coordinate of the image text'));
+				foreach ($captcha_features as $id => $feature_name) {
+					echo '<tr><td><label for="' . $id . '">' . $feature_name . '</label></td><td colspan="2"><input name="' . $id . '" type="text"  id="' . $id . '" value="' . htmlspecialchars(stripslashes($captcha_array[$id])) . '"';
+					if ('captcha_label' == $id) echo 'size="50"'; else echo 'size="10"'; 
+					echo '/></td></tr>';	
+				}
+				if (!function_exists('imagettftext')) { 
 				 	$captcha_array['use_font'] = 0;
 					$use_font_disabled = 'disabled="disabled"';		
 					$disabled_style = 'style="background-color: #ccc"'; ?>		 
@@ -906,100 +880,25 @@ function subpage_captcha() { // prints the captcha options subpage
 				<tr><td><label for="font"><?php _e('Font size'); ?></label></td>
 					<td colspan="2"><select name="font" id="font" size=""><?php
 						for ($i=1;$i<6;$i++) {
-							if ($captcha_array['font']==$i) {
-								$selected = 'selected="selected"';
-							}
-							else {
-								$selected = '';
-							}
+							$selected = ($captcha_array['font']==$i) ? 'selected="selected"' : '';				
 							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
 						} ?>
 					</select></td>
 				</tr>
-				<tr><td><label for="bgred"><?php _e('RGB red setting for the background'); ?></label></td>
-					<td><select name="bgred" id="bgred" size=""><?php
-						for ($i=0;$i<256;$i++) {
-							if ($captcha_array['bgred']==$i) {
-								$selected = 'selected="selected"';
-							}
-							else {
-								$selected = '';
-							}
-							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
-						} ?>
-					</select></td>
-					<td><div id="bgred_casing" class="slidercasing"><div id="bgred_track" class="slidertrack"></div></div></td>
-				</tr>
-				<tr><td><label for="bggreen"><?php _e('RGB green setting for the background'); ?></label></td>
-					<td><select name="bggreen" id="bggreen" size=""><?php
-						for ($i=0;$i<256;$i++) {
-							if ($captcha_array['bggreen']==$i) {
-								$selected = 'selected="selected"';
-							}
-							else {
-								$selected = '';
-							}
-							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
-						} ?>
-					</select></td>
-					<td><div id="bggreen_casing" class="slidercasing"><div id="bggreen_track" class="slidertrack"></div></div></td>
-				</tr>
-				<tr><td><label for="bgblue"><?php _e('RGB blue setting for the background'); ?></label></td>
-					<td><select name="bgblue" id="bgblue" size=""><?php
-						for ($i=0;$i<256;$i++) {
-							if ($captcha_array['bgblue']==$i) {
-								$selected = 'selected="selected"';
-							}
-							else {
-								$selected = '';
-							}
-							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
-						} ?>
-					</select></td>
-					<td><div id="bgblue_casing" class="slidercasing"><div id="bgblue_track" class="slidertrack"></div></div></td>
-				</tr>
-				<tr><td><label for="txred"><?php _e('RGB red setting for the text'); ?></label></td>
-					<td><select name="txred" id="txred" size=""><?php
-						for ($i=0;$i<256;$i++) {
-							if ($captcha_array['txred']==$i) {
-								$selected = 'selected="selected"';
-							}
-							else {
-								$selected = '';
-							}
-							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
-						} ?>
-					</select></td>
-					<td><div id="txred_casing" class="slidercasing"><div id="txred_track" class="slidertrack"></div></div></td>
-				</tr>
-				<tr><td><label for="txgreen"><?php _e('RGB green setting for the text'); ?></label></td>
-					<td><select name="txgreen" id="txgreen" size=""><?php
-						for ($i=0;$i<256;$i++) {
-							if ($captcha_array['txgreen']==$i) {
-								$selected = 'selected="selected"';
-							}
-							else {
-								$selected = '';
-							}
-							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
-						} ?>
-					</select></td>
-					<td><div id="txgreen_casing" class="slidercasing"><div id="txgreen_track" class="slidertrack"></div></div></td>
-				</tr>
-				<tr><td><label for="txblue"><?php _e('RGB blue setting for the text'); ?></label></td>
-					<td><select name="txblue" id="txblue" size=""><?php
-						for ($i=0;$i<256;$i++) {
-							if ($captcha_array['txblue']==$i) {
-								$selected = 'selected="selected"';
-							}
-							else {
-								$selected = '';
-							}
-							echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
-						} ?>
-					</select></td>
-					<td><div id="txblue_casing" class="slidercasing"><div id="txblue_track" class="slidertrack"></div></div></td>
-				</tr>
+				<?php $rgb_dropdowns = array('bgred' => __('RGB red setting for the background'),
+				'bggreen' => __('RGB green setting for the background'),
+				'bgblue'  => __('RGB blue setting for the background'),
+				'txred'   => __('RGB red setting for the text'),
+				'txgreen' => __('RGB green setting for the text'),
+				'txblue'  => __('RGB blue setting for the text'));
+				foreach ($rgb_dropdowns as $id => $label) {
+					echo "<tr><td><label for='$id'>$label</label></td><td><select name='$id' id='$id' size=''>";
+					for ($i=0;$i<256;$i++) {
+						$selected = ($captcha_array[$id] == $i) ? 'selected="selected"' : '';
+						echo '<option value="' . $i . '" ' . $selected . ' >' . $i . '</option>';
+					}
+					echo "</select></td><td><div id='" . $id . "_casing' class='slidercasing'><div id='" . $id . "_track' class='slidertrack'></div></div></td></tr>";
+				} ?>
 				<tr><td><label for="rperc"><?php _e('% Variation in background color of RGB red'); ?></label></td><td><input name="rperc" type="text" id="rperc" value="<?php echo $captcha_array['rperc']*100; ?>" size="10" /></td><td><div id="rperc_casing" class="slidercasing"><div id="rperc_track" class="slidertrack"></div></div></td></tr>
 				<tr><td><label for="gperc"><?php _e('% Variation in background color of RGB green'); ?></label></td><td><input name="gperc" type="text" id="gperc" value="<?php echo $captcha_array['gperc']*100; ?>" size="10" /></td><td><div id="gperc_casing" class="slidercasing"><div id="gperc_track" class="slidertrack"></div></div></td></tr>
 				<tr><td><label for="bperc"><?php _e('% Variation in background color of RGB blue'); ?></label></td><td><input name="bperc" type="text" id="bperc" value="<?php echo $captcha_array['bperc']*100; ?>" size="10" /></td><td><div id="bperc_casing" class="slidercasing"><div id="bperc_track" class="slidertrack"></div></div></td></tr>
@@ -1015,7 +914,6 @@ function subpage_captcha() { // prints the captcha options subpage
 <?php
 } //end function subpage_captcha
 
-//********************************************************************************
 function subpage_alerts() { // prints the alerts options subpage
 global $filosofo_cp_default_options; 
 	$alerts_array = $this->get_option('filosofo_cp_alerts_array');
@@ -1034,42 +932,20 @@ global $filosofo_cp_default_options;
 		<input name="form_id" type="text" id="form_id" value="<?php echo htmlspecialchars(stripslashes($alerts_array['form_id'])); ?>"  size="20" />
 		<hr />
 		<table>
-			<tr><td><label for="name"><?php _e('Alert commenters that they have not filled in the "Name" field?'); ?></label></td>
-				<td>
-					<select name="name" id="name" >
-						<option value="1" <?php if ($alerts_array['name']== 1) {echo 'selected="selected"';} ?>>Yes</option>
-						<option value="0" <?php if ($alerts_array['name']== 0) {echo 'selected="selected"';} ?>>No</option>
-					</select>
-				</td>
-				<td><label for="name_text"><?php _e('Text for warning:'); ?></label></td>
-				<td><input name="name_text" type="text" id="name_text" value="<?php echo htmlspecialchars(stripslashes($alerts_array['name_text'])); ?>" size="50"  /></td>
-				<td><label for="name_id"><?php _e('The "Name" field\'s "id" attribute value') ?>:<br /><small><?php _e('(Most likely the default is correct)') ?></small></label></td>
-				<td><input name="name_id" type="text" id="name_id" value="<?php echo htmlspecialchars(stripslashes($alerts_array['name_id'])); ?>" size="10"  /></td>
-			</tr>
-			<tr><td><label for="email"><?php _e('Alert commenters that they have not filled in the "Email" field?'); ?></label></td>
-				<td>
-					<select name="email" id="email" >
-						<option value="1" <?php if ($alerts_array['email']== 1) {echo 'selected="selected"';} ?>>Yes</option>
-						<option value="0" <?php if ($alerts_array['email']== 0) {echo 'selected="selected"';} ?>>No</option>
-					</select>
-				</td>
-				<td><label for="email_text"><?php _e('Text for warning:'); ?></label></td>
-				<td><input name="email_text" type="text" id="email_text" value="<?php echo htmlspecialchars(stripslashes($alerts_array['email_text'])); ?>" size="50"  /></td>
-				<td><label for="email_id"><?php _e('The "Email" field\'s "id" attribute value') ?>:<br /><small><?php _e('(Most likely the default is correct)') ?></small></label></td>
-				<td><input name="email_id" type="text" id="email_id" value="<?php echo htmlspecialchars(stripslashes($alerts_array['email_id'])); ?>" size="10"  /></td>
-			</tr>
-			<tr><td><label for="captcha"><?php _e('Alert commenters that they have not filled in the "Chaptcha" field code?'); ?><br /><small><?php _e('(This applies only if you\'ve activated the '); ?><a href="<?php echo $_SERVER['PHP_SELF']; ?>?page=<?php echo FILOSOFOCPNAME; ?>&amp;subpage=3"><?php _e('captcha feature'); ?></a>)</small></label></td>
-				<td>
-					<select name="captcha" id="captcha" >
-						<option value="1" <?php if ($alerts_array['captcha']== 1) {echo 'selected="selected"';} ?>>Yes</option>
-						<option value="0" <?php if ($alerts_array['captcha']== 0) {echo 'selected="selected"';} ?>>No</option>
-					</select>
-				</td>
-				<td><label for="captcha_text"><?php _e('Text for warning:'); ?></label></td>
-				<td><input name="captcha_text" type="text" id="captcha_text" value="<?php echo htmlspecialchars(stripslashes($alerts_array['captcha_text'])); ?>" size="50"  /></td>
-				<td><label for="captcha_id"><?php _e('The "Captcha" field\'s "id" attribute value') ?>:<br /><small><?php _e('(Most likely the default is correct)') ?></small></label></td>
-				<td><input name="captcha_id" type="text" id="captcha_id" value="<?php echo htmlspecialchars(stripslashes($alerts_array['captcha_id'])); ?>" size="10"  /></td>
-			</tr>
+		<?php $alert_fields = array('name' => 'Name', 'email' => 'Email', 'captcha' => 'Captcha');
+		foreach ($alert_fields as $id => $field_name) {
+			echo "<tr><td><label for='$id'>" . sprintf(__('Alert commenters that they have not filled in the "%s" field?'),$field_name) . '</label></td>';
+			echo "<td><select name='$id' id='$id'>";
+			foreach (array(1 => 'Yes', 0 => 'No') as $binary => $binary_text) {
+				echo "<option value='$binary'";
+				if ($alerts_array[$id]== $binary) echo 'selected="selected"'; 
+				echo ">$binary_text</option>";
+			}
+			echo '</select></td><td><label for="' . $id . '_text">' . __('Text for warning:') . '</label></td>';
+			echo '<td><input name="' . $id . '_text" type="text" id="' . $id . '_text" value="' . htmlspecialchars(stripslashes($alerts_array[$id . '_text'])) . '" size="50"  /></td>'; 
+			echo '<td><label for="' . $id . '_id">' . sprintf(__('The "%s" field\'s "id" attribute value'), $field_name) . ':<br /><small>' . __('(Most likely the default is correct)') . '</small></label></td>';
+			echo '<td><input name="' . $id . '_id" type="text" id="' . $id . '_id" value="' . htmlspecialchars(stripslashes($alerts_array[$id . '_id'])) . '" size="10"  /></td></tr>';
+		} ?>		
 		</table>
 	</fieldset>
 	<p class="submit">
@@ -1080,7 +956,6 @@ global $filosofo_cp_default_options;
 <?php
 } // end subpage_alerts()
 
-//********************************************************************************
 function alert_scripts() { // prints out JavaScript alert scripts as needed
 global $filosofo_cp_default_options;
 	$alerts_array = $this->get_option('filosofo_cp_alerts_array');
@@ -1088,59 +963,48 @@ global $filosofo_cp_default_options;
 		$javascript_text = <<<JAVASCRIPT
 <script type="text/javascript">
 //<![CDATA[
-//******************************************************************************
 function addEvent(obj, evType, fn){
 // from http://www.sitepoint.com/article/structural-markup-javascript
-//******************************************************************************
- if (obj.addEventListener){
-   obj.addEventListener(evType, fn, false); //false to make sure it happens during event bubbling, not capturing.  see http://www.quirksmode.org/js/events_order.html and http://www.quirksmode.org/js/events_advanced.html
-   return true;
- } else if (obj.attachEvent){
-   var r = obj.attachEvent("on"+evType, fn);
-   return r;
- } else {
-   return false;
- }
+	if (obj.addEventListener){
+   		obj.addEventListener(evType, fn, false); //false to make sure it happens during event bubbling, not capturing.  see http://www.quirksmode.org/js/events_order.html and http://www.quirksmode.org/js/events_advanced.html
+   		return true;
+	} else if (obj.attachEvent){
+		var r = obj.attachEvent("on"+evType, fn);
+		return r;
+	} else {
+		return false;
+	}
 }
 
-//*****************************************************************************
 function giveidFocus(idname){
-// gives a given id focus
-// arg: idname--the id to give focus
-//*****************************************************************************
-
-        if (document.getElementById) {  
-            var thingtogetfocus=document.getElementById(idname);  
-            thingtogetfocus.focus();
-            } 
+	if (document.getElementById) {  
+		var thingtogetfocus=document.getElementById(idname);  
+		thingtogetfocus.focus();
+	} 
 } //end giveidFocus
 
 function checker () {}
-//***********************************************************************
 checker.fieldAlert = function(fieldid,alertmsg) {
 // alerts a user if she hasn't filled in a given field, then takes her to the field
 // args: fieldid--the id of the field
 //  alertmsg--the message to be alerted to
-//***********************************************************************
+
 //check that the id exists
 if (document.getElementById(fieldid)) {
-    //check if it's blank
-    var field = document.getElementById(fieldid);
-    if (field.value == '') {
-        alert(alertmsg);
-        giveidFocus(fieldid);
-        return true;
-    }
-    else {return false}
+	//check if it's blank
+	var field = document.getElementById(fieldid);
+	if (field.value == '') {
+		alert(alertmsg);
+		giveidFocus(fieldid);
+		return true;
+	}
+	else {return false}
 }
-
 
 } //end function fieldAlert
 
-//***********************************************************************
 checker.noBlankRequireds = function() {
 // returns false on a submit if certain fields are left blank
-//***********************************************************************
 var return_value = true;
 JAVASCRIPT;
 	if ($alerts_array['captcha'])
@@ -1164,7 +1028,6 @@ JAVASCRIPT;
 // end options page stuff
 //********************************************************************************
 
-//********************************************************************************
 function submitbuttons($page = 'standard') { // prints out the submit buttons and extra stuff such as the captcha
 	$subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
 	$this->display_captcha($page);
@@ -1182,13 +1045,8 @@ function submitbuttons($page = 'standard') { // prints out the submit buttons an
 	}
 } //end submitbuttons
 
-//*****************************************************************************
-//  Captcha stuff
-//    based on the Trencaspammers plugin
-//  http://coffelius.arabandalucia.com
-//*****************************************************************************
+//  Captcha stuff based on the Trencaspammers plugin http://coffelius.arabandalucia.com
 
-//*****************************************************************************
 function captcha_process_number($number) { // passed a number, it returns an encoded number that will be used in the captcha image
 // args: number--the number to process into the displayed number
 	$captcha_array = $this->get_option('filosofo_cp_captcha_array');
@@ -1199,12 +1057,13 @@ function captcha_process_number($number) { // passed a number, it returns an enc
 return $code;
 } //end function captcha_process_number
 
-//*****************************************************************************
 function display_captcha($page=false) { // displays the captcha and associated input values
+global $user_ID;
 // arg: page--the page calling the function
 	$captcha_array = $this->get_option('filosofo_cp_captcha_array');
 	$alerts_array = $this->get_option('filosofo_cp_alerts_array');
 	$number = rand();
+	if ( $user_ID ) $page = false;
 	//if captcha is set to be on
 	if ($captcha_array['show_captcha'] > 0) {
 		//if the captcha should show up on every page
@@ -1222,33 +1081,21 @@ function display_captcha($page=false) { // displays the captcha and associated i
 	} //end if captcha is set to be on
 } //end function display_captcha
 
-//*****************************************************************************
 function captcha_image($random_num,$num_length = 6,$circles = 5,$lines = 1,$width=100,$height=40,$font=5,$bgred=10,$bggreen=102,$bgblue=174,$txred=255,$txgreen=255,$txblue=255,$rperc=0.01,$gperc=0.51,$bperc=0.87,$use_font=0,$font_path='',$angle=0,$x_ord=20,$y_ord=10,$test_num=0) 
 {
 // creates the captcha image
 // args: $random_num--the random number sent to the image and included in the input
-//       $salt--a string to add to the "randomness" of the generated number
 //       $num_length--the length of the resulting image code
 //       $circles--the number of background circles
 //       $lines--the number of lines appearing in the captcha image
-//       $width--the width of the image
-//       $height--the height of the image
+//       $width, $height--of the image
 //       $font--a number representing the font
-//       $bgred--of RGB, between 0 and 255, inclusive, for background
-//       $bggreen--of RGB, between 0 and 255, inclusive, for background
-//       $bgblue--of RGB, between 0 and 255, inclusive, for background
-//       $txred--of RGB, between 0 and 255, inclusive, for text
-//       $txgreen--of RGB, between 0 and 255, inclusive, for text
-//       $txblue--of RGB, between 0 and 255, inclusive, for text
-//       $rperc--the percentage of variation
-//       $gperc--the percentage of variation
-//       $bperc--the percentage of variation
+//       $bgred, $bggreen, $bgblue, $txred, $txgreen, $txblue--of RGB between 0 and 255 for background and text
+//       $rperc, $gperc, $bperc--the percentage of variation
 //	 $use_font--whether to use a TrueType font file
 //	 $font_path--the path to a TrueType font file
-//	 $angle--the angle of the text
-//	 $x_ord--the x coordinate of the text
-//	 $y_ord--the y coordinate of the text
-//
+//	 $angle--text angle
+//	 $x_ord, $y_ord--x and y coordinates of the text
 	if ($test_num) {	
 		$code = substr($random_num,0,$num_length);
 		$rperc = $rperc * .01;
@@ -1284,7 +1131,6 @@ function captcha_image($random_num,$num_length = 6,$circles = 5,$lines = 1,$widt
 	die();
 }  // end captcha image
 
-//*****************************************************************************
 function captcha_human_check($random_num, $string) { // checks that the code-enterer is a person, not a spammer
 // args: $string--the string returned in the form
 //	random_num--the original number before processing
@@ -1292,21 +1138,15 @@ function captcha_human_check($random_num, $string) { // checks that the code-ent
 return $string==$code;
 } //end captcha_human_check
 
-//*****************************************************************************
 function filter_comment($comment) { // applies filters to the $comment, so that in the preview it appears as it will finally
-// arg: comment--the comment to be filtered
-	// filter explanations from http://codex.wordpress.org/Plugin_API
-	//preprocessing a new comment's content prior to saving it in the database, called with the comment content passed as a string. Should return a string.
 	$comment = apply_filters('pre_comment_content', $comment);
 	$comment = apply_filters('comment_content_presave', $comment); // Deprecated
 	$comment = stripslashes($comment);
 	$comment = apply_filters('post_comment_text', $comment); // Deprecated
-	// applied to comment content prior to rendering. Passed the comment as a string.
 	$comment = apply_filters('comment_text', $comment);
 return $comment;
 } //end filter_comment
 
-//*****************************************************************************
 function template_format($template) { // replaces template variables with PHP, etc.
 // arg: template--the text through which to search for replacable variables
 	$subpage_general_array = $this->get_option('filosofo_cp_subpage_general_array');
@@ -1334,18 +1174,16 @@ function template_format($template) { // replaces template variables with PHP, e
 return $template;
 } //end template_format
 
-//***************************************************************
 function dirify($s) { // takes out problematic characters for URLs (or DB entries)
-	$s = sanitize_title($s); 			## take out weird characters		
+	$s = sanitize_title($s); 		## take out weird characters		
 	$s = strtolower($s);           		## lower-case.
 	$s = strip_tags($s);       		## remove HTML tags.
-	$s = preg_replace('!&[^;\s]+;!','',$s);    ## remove HTML entities.
-	$s = preg_replace('![^\w\s]!','',$s);      ## remove non-word/space chars.
+	$s = preg_replace('!&[^;\s]+;!','',$s); ## remove HTML entities.
+	$s = preg_replace('![^\w\s]!','',$s);   ## remove non-word/space chars.
 	$s = preg_replace('!\s+!','_',$s); 	## change space chars to underscores.
 return $s;    
 } //end dirify
 
-//***************************************************************
 function get_the_files_content($comments_path) { //gets the file's content, even for PHP 4.2
 	if (!file_exists($comments_path))
         	return false;
@@ -1377,7 +1215,6 @@ if((!get_option('filosofo_cp_version')) || ($filosofo_cp_version > get_option('f
 	$filosofo_cp_class->upgrade();
 	
 if(!function_exists('filosofo_cp_display_previous_comments')) {
-//*****************************************************************************
 function filosofo_cp_display_previous_comments() { // displays the previous comments in the preview
 global $filosofo_cp_class, $wpdb, $filosofo_cp_post_id, $user_ID, $comment_post_ID, $post;
 	$subpage_general_array = $filosofo_cp_class->get_option('filosofo_cp_subpage_general_array');
@@ -1407,13 +1244,7 @@ global $filosofo_cp_class, $wpdb, $filosofo_cp_post_id, $user_ID, $comment_post_
 				endforeach;
 				eval('?> ' . stripslashes($subpage_general_array['comments_footer']));
 			else : // this is displayed if there are no comments so far ?>
-				<?php if ( comments_open() ) : ?>
-					<!-- If comments are open, but there are no comments. -->
-					<p class="nocomments"><?php _e('No comments yet.'); ?></p>
-				<?php else : // comments are closed ?>
-					<!-- If comments are closed. -->
-					<p class="nocomments"><?php _e('Comments are closed.'); ?></p>
-				<?php endif; ?>
+				<p class="nocomments"><?php _e('No comments yet.'); ?></p>
 			<?php endif;       
 		} //end if there actually are comments
 	} //end if we are to show the previous comments on the preview page
@@ -1430,9 +1261,6 @@ if ($_GET['captcha_image']) {
 elseif ($_GET['test_num']) {
 	$filosofo_cp_class->captcha_image($_GET['the_num'],$_GET['num_length'],$_GET['circles'],$_GET['lines'],$_GET['width'],$_GET['height'],$_GET['font'],$_GET['bgred'],$_GET['bggreen'],$_GET['bgblue'],$_GET['txred'],$_GET['txgreen'],$_GET['txblue'],$_GET['rperc'],$_GET['gperc'],$_GET['bperc'],$_GET['use_font'],$_GET['font_path'],$_GET['angle'],$_GET['x_ord'],$_GET['y_ord'],$_GET['test_num']);
 }
-//*****************************************************************************
-//  End Captcha stuff
-//*****************************************************************************
 
 //if someone's submitting a comment (both for previewing and direct submit)
 if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
@@ -1485,8 +1313,9 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 	if($filosofo_cp_captcha_array['show_captcha']>0) {
 		$code=trim($_POST[$filosofo_cp_alerts_array['captcha_id']]);
 		$random_num=$_POST['filosofo_cp_captcha_number'];
+		add_action('filosofo_cp_captcha_error', create_function('','die(__("Error: please type the security code."));'),10);
 		if ( !$filosofo_cp_class->captcha_human_check($random_num, $code, $filosofo_cp_captcha_array['salt'],$filosofo_cp_captcha_array['num_length']))
-			die( __('Error: please type the security code.'));
+			do_action('filosofo_cp_captcha_error');
 	}
 	//end captcha action
 
@@ -1539,18 +1368,11 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 	header('Pragma: no-cache');
 	
 	//send the viewer back to the post with the comment now added
-	if (isset($_POST['filosofo_cp_is_popup'])) 
-		$location = get_settings('siteurl') . '?comments_popup=' . $comment_post_ID;
-	else	
-		$location = get_permalink($comment_post_ID);
+	if (isset($_POST['filosofo_cp_is_popup'])) $location = get_settings('siteurl') . '?comments_popup=' . $comment_post_ID;
+	else $location = get_permalink($comment_post_ID);
 
-	if(function_exists('wp_redirect')) {  
-		wp_redirect($location);
-	}
-	//pre-WordPress 1.5.1.3
-	else {
-		header("Location: $location");
-	}
+	if(function_exists('wp_redirect')) wp_redirect($location);
+	else header("Location: $location"); //pre-WordPress 1.5.1.3
 }
 
 //else someone's not submitting a comment
