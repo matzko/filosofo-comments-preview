@@ -195,7 +195,8 @@ return $header . $divs[0] . $main_template . $divs[1] . $footer;
 
 function replace_button($content) {
 	$content = str_replace("/wp-comments-post.php","/wp-content/plugins/" . FILOSOFOCPNAME, $content);
-	return preg_replace('/<input.*name=("|\')submit("|\').*\/>/i',$this->submitbuttons(),$content);
+	if ( !strpos($content,'filosofo_cp_post_id')) return preg_replace('/<input.*name=("|\')submit("|\').*\/>/i',$this->submitbuttons(),$content);
+	else return $content;
 } 
 
 var $options = array();
