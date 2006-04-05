@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.76
+Version: 0.77
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -1292,7 +1292,7 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 		$single = true;
 		// another hack
 		$posts[0]->ID = $comment_post_ID;
-		
+		$id = $comment_post_ID;
 		//print the preview template
 		
 		//if it's for a pop-up
