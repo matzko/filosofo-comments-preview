@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.77
+Version: 0.78
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -34,7 +34,7 @@ if(!function_exists(get_settings))
 // Default values
 //********************************************************************************
 
-$filosofo_cp_version = .76;
+$filosofo_cp_version = .78;
 
 $comments_template = <<<COMMENTSTEMPLATE
 <li class="%alt_class" id="comment-<?php comment_ID() ?>">
@@ -195,7 +195,7 @@ return $header . $divs[0] . $main_template . $divs[1] . $footer;
 
 function replace_button($content) {
 	$content = str_replace("/wp-comments-post.php","/wp-content/plugins/" . FILOSOFOCPNAME, $content);
-	if ( !strpos($content,'filosofo_cp_post_id')) return preg_replace('/<input.*name=("|\')submit("|\').*\/>/i',$this->submitbuttons(),$content);
+	if ( !strpos($content,'filosofo_cp_post_id')) return preg_replace('/<input.*name=("|\')submit("|\').*\/>/i',$this->submitbuttons(),$content,1);
 	else return $content;
 } 
 
