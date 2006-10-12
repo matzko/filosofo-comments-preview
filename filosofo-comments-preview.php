@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  It's highly configurable from the <a href="options-general.php?page=filosofo-comments-preview.php">admin control panel</a>, including optional <a href="http://en.wikipedia.org/wiki/Captcha">captcha</a> and JavaScript alert features.    
-Version: 0.78
+Version: 0.79
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -28,7 +28,7 @@ Author URI: http://www.ilfilosofo.com/blog/
 define("FILOSOFOCPNAME", basename(__FILE__));
 
 // initialize functions
-if(!function_exists(get_settings))
+if(!function_exists(get_option))
 	require_once(realpath('../../wp-config.php'));
 //********************************************************************************
 // Default values
@@ -949,9 +949,9 @@ var return_value = true;
 JAVASCRIPT;
 	if ($alerts_array['captcha'])
 		$javascript_text .= 'if (checker.fieldAlert(\'' .  $alerts_array['captcha_id'] . '\',\'' . htmlspecialchars($alerts_array['captcha_text']) . '\')) { return_value = false; }' . "\n";
-	if (get_settings('require_name_email') && $alerts_array['email']) 
+	if (get_option('require_name_email') && $alerts_array['email']) 
 		$javascript_text .= 'if (checker.fieldAlert(\'' .  $alerts_array['email_id'] . '\',\'' . htmlspecialchars($alerts_array['email_text']) . '\')) { return_value = false; }'. "\n";
-	if (get_settings('require_name_email') && $alerts_array['name']) 
+	if (get_option('require_name_email') && $alerts_array['name']) 
 		$javascript_text .= 'if (checker.fieldAlert(\'' .  $alerts_array['name_id'] . '\',\'' . htmlspecialchars($alerts_array['name_text']) . '\')) { return_value = false; }'. "\n";
 	$javascript_text .= "\n return return_value; }\n";
 	$javascript_text .= 'checker.assignCommentSubmitEvent = function () {  var w = document.getElementById("';
@@ -1115,7 +1115,7 @@ function template_format($template) { // replaces template variables with PHP, e
 	$template = str_replace("%previewed_buttons",$previewed_buttons,$template);
 	$template = str_replace("%previewed_comment",'<?php echo $fcp_comment; ?>',$template);
 	$template = str_replace("%previewed_email",'<?php echo apply_filters(\'comment_email\',$email); ?>',$template);
-	$template = str_replace("%previewed_form_submit_path",'<?php echo get_settings(\'siteurl\'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>',$template);
+	$template = str_replace("%previewed_form_submit_path",'<?php echo get_option(\'siteurl\'); ?>/wp-content/plugins/<?php echo FILOSOFOCPNAME; ?>',$template);
 	$template = str_replace("%previewed_prev_comments",'<?php $subpage_general_array = $filosofo_cp_class->get_option(\'filosofo_cp_subpage_general_array\'); if ($subpage_general_array[\'comments_settings_show\'] == 1) { echo filosofo_cp_display_previous_comments(); } ?>',$template);
 	$template = str_replace("%previewed_raw_comment",'<?php echo stripslashes($raw_comment); ?>',$template);
 	$template = str_replace("%previewed_url",'<?php echo apply_filters(\'comment_url\',$url); ?>',$template);
@@ -1248,7 +1248,7 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 			die( __('Sorry, you must be logged in to post a comment.') );
 	endif;
 	$comment_type = '';
-	if ( get_settings('require_name_email') && !$user_ID ) {
+	if ( get_option('require_name_email') && !$user_ID ) {
 		if ( 6 > strlen($comment_author_email) || '' == $comment_author )
 			die( __('Error: please fill the required fields (name, email).') );
 		elseif ( !is_email($comment_author_email))
@@ -1313,7 +1313,7 @@ if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
 		setcookie('comment_author_url_' . COOKIEHASH, stripslashes($comment_author_url), time() + 30000000, COOKIEPATH);
 	}
 	//send the viewer back to the post with the comment now added
-	if (isset($_POST['filosofo_cp_is_popup'])) $location = get_settings('siteurl') . '?comments_popup=' . $comment_post_ID;
+	if (isset($_POST['filosofo_cp_is_popup'])) $location = get_option('home') . '?comments_popup=' . $comment_post_ID;
 	else $location = get_permalink($comment_post_ID);
 
 	if(function_exists('wp_redirect')) wp_redirect($location);
