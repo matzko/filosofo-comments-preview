@@ -204,12 +204,15 @@ class filosofo_cp {
 			(( 'popup' == $this->pagekind ) ? array('comments_popup' => $id ) : array()),
 			get_permalink($id)) . '#comment-' . $this->preview_comment_id;
 		$content = str_replace(array( get_option('siteurl') . '/wp-comments-post.php', '/wp-comments-post.php'), $link, $content);
-		if ( !strpos($content,'id="preview"')) { 
-			$content = preg_replace('#<input[^>]*name=("|\')submit("|\')[^>]*/>#i',$this->submitbuttons(),$content,1);
+		if ( !strpos($content,'id="preview"') && strpos($content,'comment_post_ID')) { 
+			// search reversed strings to get last input first
+			$p1 = array('#>/[^>]*("|\')timbus("|\')=eman[^>]*tupni<#i');
+			$p2 = array('#>nottub/<.*>[^>]*("|\')timbus("|\')=epyt[^>]*nottub<#i');	
 			if ( false !== strpos( $content, '<button' )) {
 				add_filter('filosofo-comments-preview_input_array', array(&$this,'use_buttons'));	
-				$content = preg_replace('#<button[^>]*type=("|\')submit("|\')[^>]*>.*</button>#i',$this->submitbuttons(),$content,1);
+				$p1 = array_merge( $p1, $p2 );
 			}
+			$content = strrev(preg_replace($p1,strrev($this->submitbuttons()),strrev($content),1));
 		}
 		if ( $this->preview_submitted() )
 			$content = str_replace('</textarea>',stripslashes($raw_comment) . '</textarea>',$content);	
