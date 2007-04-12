@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  
-Version: 1.0
+Version: 1.0.1
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -37,7 +37,9 @@ class filosofo_cp {
 		add_action('init', array(&$this,'init'));
 		add_action('activate_' . basename(__FILE__), array(&$this,'activate_plugin'));
 		add_action('admin_menu', array(&$this,'menu'));
-		add_action('comment_form', create_function('$a','ob_end_flush();'));
+		add_action('comment_form', create_function('$a','global $filosofo_cp_class; ob_end_flush(); $filosofo_cp_class->flush = false;'));
+		// flush if not already done
+		add_action('wp_footer', create_function('$a','global $filosofo_cp_class; if ( true == $filosofo_cp_class->flush ) { ob_end_flush(); $filosofo_cp_class->flush = false; }'));
 		if ( ! $this->older_system() ) 
 			add_filter('comments_array', array(&$this,'add_previewed_comment'));
 		if( isset( $_POST['comment_post_ID'] ) && isset( $_POST['author'] ) ) {
@@ -48,8 +50,8 @@ class filosofo_cp {
 			add_action('wp_head', array(&$this,'header_style'));
 
 		// add the preview button
-		add_filter('comments_template', create_function('$a','global $filosofo_cp_class; $filosofo_cp_class->pagekind = "standard"; ob_start(array(&$filosofo_cp_class,"replace_button")); return $a;'));
-		add_filter('comments_popup_template', create_function('$a','global $filosofo_cp_class; $filosofo_cp_class->pagekind = "popup"; ob_start(array(&$filosofo_cp_class,"replace_button")); return $a;'));
+		add_filter('comments_template', create_function('$a','global $filosofo_cp_class; $filosofo_cp_class->pagekind = "standard"; ob_start(array(&$filosofo_cp_class,"replace_button")); $filosofo_cp_class->flush = true; return $a;'));
+		add_filter('comments_popup_template', create_function('$a','global $filosofo_cp_class; $filosofo_cp_class->pagekind = "popup"; ob_start(array(&$filosofo_cp_class,"replace_button")); $filosofo_cp_class->flush = true; return $a;'));
 	}
 
 	function activate_plugin() {
