@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  
-Version: 1.0.1
+Version: 1.0.2
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -172,7 +172,7 @@ class filosofo_cp {
 			$c['comment_author_url'] = $fcp_comment_author_url;
 			$c['comment_author_IP'] = $_SERVER['REMOTE_ADDR'];
 			$c['comment_date'] = current_time('mysql');
-			$c['comment_date_gmt'] = gmdate('Y-m-d H:i:s', strtotime($comment_date) );
+			$c['comment_date_gmt'] = current_time('mysql',1);
 			$c['comment_content'] = $fcp_comment_content;
 			$c['comment_karma'] = 0;
 			$c['comment_approved'] = 1;
