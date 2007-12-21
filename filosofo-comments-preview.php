@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  
-Version: 1.0.2
+Version: 1.0.3
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -52,6 +52,8 @@ class filosofo_cp {
 		// add the preview button
 		add_filter('comments_template', create_function('$a','global $filosofo_cp_class; $filosofo_cp_class->pagekind = "standard"; ob_start(array(&$filosofo_cp_class,"replace_button")); $filosofo_cp_class->flush = true; return $a;'));
 		add_filter('comments_popup_template', create_function('$a','global $filosofo_cp_class; $filosofo_cp_class->pagekind = "popup"; ob_start(array(&$filosofo_cp_class,"replace_button")); $filosofo_cp_class->flush = true; return $a;'));
+
+		add_filter('preprocess_comment', array(&$this, 'kill_wp_comments_use'));
 	}
 
 	function activate_plugin() {
@@ -67,6 +69,16 @@ class filosofo_cp {
 		else return false;
 	}
 
+	/*
+	 * Prevent direct calls to wp-comments-post.php
+	 * (should help reduce spam)
+	 */
+	function kill_wp_comments_use($data = null) {
+		if ( false !== stristr($_SERVER['REQUEST_URI'], 'wp-comments-post.php') ) 
+			wp_die( __('You must submit a comment using the comment form.','filosofo-comments-preview') );
+		return $data;
+	}
+
 	function using_kubrick() { // a hack to make kubrick preview buttons look good
 		if ( function_exists('kubrick_head') ) return true;
 		else return false;
@@ -77,19 +89,20 @@ class filosofo_cp {
 	}
 
 	function options_page() {
-		if ( isset( $_POST['bgcolor'] ) ) :
+		if ( isset( $_POST['comments-preview-updated'] ) ) :
 			if ( '' == $_POST['bgcolor'] ) :
 				update_option('filosofo_cp_styling','NONE');
 			else :
 				update_option('filosofo_cp_styling','ACTIVE');
 			endif;
 			update_option('filosofo_cp_bgcolor',$_POST['bgcolor']);
+			update_option('filosofo_cp_req_prev', (int) $_POST['force-preview']);
 		endif;
 		?>
 		<div class="wrap"><h2><?php _e('Comments Preview','filosofo-comments-preview') ?></h2>
 			<form name="preview_styling" method="post" action="?page=<?php 
 			echo $this->options_page_id ?>&amp;updated=true"> 
-			<input type="hidden" name="updated" id="updated" value="true" />
+			<input type="hidden" name="comments-preview-updated" id="comments-preview-updated" value="true" />
 			<fieldset class="options">
 				<legend><?php _e('Automatic Styling','filosofo-comments-preview') ?></legend>
 				<div><div style="background-color: <?php echo get_option('filosofo_cp_bgcolor') ?>; border: 1px solid gray; width: 20px; height: 20px; margin-right: 3px; float: left;" title="<?php _e('This box displays the color for the preview&rsquo;s background.','filosofo-comments-preview') ?>">&nbsp;</div>
@@ -105,9 +118,20 @@ class filosofo_cp {
 					_e('Automatic styling is disabled. Enter a <acronym title="Cascading Style Sheets">CSS</acronym> color value to style the preview&rsquo;s background color.','filosofo-comments-preview');
 				endif;
 				?></label></p></div>
-				<p class="submit"><input type="submit" name="Update" value="<?php _e('Update Options &raquo;') ?>" /></p>
+			</fieldset>
+			<fieldset class="options">
+				<legend><?php _e('Preview Options','filosofo-comments-preview') ?></legend>
+				<div><p><label for="force-preview"><?php _e('Require commenters to preview before posting?','filosofo-comments-preview') ?>
+					<input type="checkbox" name="force-preview" id="force-preview" value="1" <?php
+						if ( true == get_option('filosofo_cp_req_prev') ) {
+							echo 'checked="checked"';
+						}
+					?> />
+				</label></p>
+				</div>
 			</fieldset>
 			<?php do_action('filosofo-comments-preview_options_form'); ?>
+				<p class="submit"><input type="submit" name="Update" value="<?php _e('Update Options &raquo;') ?>" /></p>
 			</form>
 		</div>
 		<?php
@@ -139,6 +163,50 @@ class filosofo_cp {
 	function add_previewed_comment( $comments = array() , $comment_post_ID = 0 ) {
 		return array_merge( $comments , $this->previewed_comment( $comment_post_ID ) );
 	}
+
+	/*
+	 * Nonce functions with backwards-compat for old versions of WP
+	 */
+
+	function check_nonce($nonce = '', $action = -1) {
+		if ( function_exists('wp_verify_nonce') ) {
+			return wp_verify_nonce($nonce, $action);
+		} else {
+			$user = wp_get_current_user();
+			$uid = (int) $user->id;
+			$i = ceil(time() / 43200);
+
+			//Allow for expanding range, but only do one check if we can
+			$salt = DB_PASSWORD . DB_USER . DB_NAME . DB_HOST . ABSPATH;
+			if ( function_exists('hash_hmac') ) { 
+				$hash = hash_hmac('md5', $i . $action . $uid, $salt);
+			} else {
+				$hash = md5($i . $action . $uid . $salt);
+			}
+			if( substr($hash, -12, 10) == $nonce || substr($hash, -12, 10) == $nonce )
+				return true;
+			return false;
+		}
+	}
+
+	function create_nonce($action = null) {
+		if ( function_exists('wp_create_nonce') ) {
+			return wp_create_nonce($action);
+		} else {
+			$user = wp_get_current_user();
+			$uid = (int) $user->id;
+			$i = ceil(time() / 43200);
+			$salt = DB_PASSWORD . DB_USER . DB_NAME . DB_HOST . ABSPATH;
+			if ( function_exists('hash_hmac') ) { 
+				$hash = hash_hmac('md5', $i . $action . $uid, $salt);
+			} else {
+				$hash = md5($i . $action . $uid . $salt);
+			}
+			return substr($hash, -12, 10);
+		}
+	}
+
+	
 
 	function header_style() {
 		$template = get_template_directory();
@@ -190,6 +258,13 @@ class filosofo_cp {
 		else :
 			return array();
 		endif;
+	}
+
+	function post_submitted() {
+		if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) { 
+			return true;
+		}
+		else return false;
 	}
 
 	function preview_submitted() {
@@ -273,6 +348,31 @@ class filosofo_cp {
 		return $this->generate_markup( $input_array );
 	} //end submitbuttons 
 
+		/*
+		 * Remove the preview button
+		 */
+		function lone_prev_button($markup = array()) {
+			if ( isset( $markup['submit'] ) ) {
+				unset($markup['submit']);
+			}
+			return $markup;
+		}
+
+		/*
+		 * Add preview nonce
+		 */
+		function preview_check($markup = array()) {
+			$markup['preview-check'] = array(
+				'element' => 'input',
+				'attribs' => array(
+					'type' => 'hidden',
+					'name' => 'preview-check',
+					'value' => $this->create_nonce('filosofo-comments-preview-check'),
+				),
+			);
+			return $markup;
+		}
+
 	function older_system() {
 		if ( ! function_exists('wp_schedule_event') ) return true;
 		else return false;
@@ -281,8 +381,24 @@ class filosofo_cp {
 	function init() {
 		global $fcp_comment_author, $fcp_comment_author_email, $fcp_comment_author_url, $fcp_comment_content, $fcp_comment_post_ID, $fcp_comment_type, $fcp_user_ID, $raw_comment, $wpdb;
 		load_plugin_textdomain('filosofo-comments-preview');
+	
+		$req_prev = (int) get_option('filosofo_cp_req_prev');
+		// if previews are required
+		if ( $req_prev ) {
+			if ( $this->preview_submitted() ) {
+				add_filter('filosofo-comments-preview_input_array', array(&$this, 'preview_check'), 999);
+			} else {
+				add_filter('filosofo-comments-preview_input_array', array(&$this, 'lone_prev_button'), 999);
+			}
+			
+			if ( ! $this->preview_submitted() && $this->post_submitted() && ! $this->check_nonce($_POST['preview-check'],'filosofo-comments-preview-check') ) {
+				wp_die( __('You must preview the comment before submitting.','filosofo-comments-preview') );	
+			}
+		} 
+		
 		//if someone's submitting a comment (both for previewing and direct submit)
-		if (isset($_POST['comment']) && isset($_POST['comment_post_ID'])) {
+		if ($this->post_submitted()) {
+			nocache_headers();
 			$comment_post_ID = (int) trim($_POST['comment_post_ID']);
 			$status = $wpdb->get_row("SELECT post_status, comment_status FROM $wpdb->posts WHERE ID = '$comment_post_ID'");
 
@@ -292,9 +408,9 @@ class filosofo_cp {
 			} 
 			elseif ( 'closed' ==  $status->comment_status ) {
 				do_action('comment_closed', $comment_post_ID);
-				wp_die( __('Sorry, comments are closed for this item.') );
+				wp_die( __('Sorry, comments are closed for this item.','filosofo-comments-preview') );
 			} 
-			elseif ( 'draft' == $status->post_status ) {
+			elseif ( in_array($status->post_status, array('draft', 'pending') ) ) {
 				do_action('comment_on_draft', $comment_post_ID);
 				exit;
 			}
@@ -303,6 +419,13 @@ class filosofo_cp {
 			$comment_author_email = trim($_POST['email']);
 			$comment_author_url   = trim($_POST['url']);
 			$comment_content      = trim($_POST['comment']);
+
+			if ( current_user_can('unfiltered_html') ) {
+				if ( $this->create_nonce('unfiltered-html-comment_' . $comment_post_ID) != $_POST['_wp_unfiltered_html_comment'] ) {
+					kses_remove_filters(); // start with a clean slate
+					kses_init_filters(); // set up the filters
+				}
+			}
 
 			// If the user is logged in
 			$user = wp_get_current_user();
@@ -313,17 +436,17 @@ class filosofo_cp {
 				$comment_author_url   = $wpdb->escape($user->user_url);
 			else :
 				if ( get_option('comment_registration') ) 
-					wp_die( __('Sorry, you must be logged in to post a comment.') );
+					wp_die( __('Sorry, you must be logged in to post a comment.','filosofo-comments-preview') );
 			endif;
 			$comment_type = '';
 			if ( get_option('require_name_email') && !$user_ID ) { 
 				if ( 6 > strlen($comment_author_email) || '' == $comment_author )
-					wp_die( __('Error: please fill the required fields (name, email).') );
+					wp_die( __('Error: please fill the required fields (name, email).','filosofo-comments-preview') );
 				elseif ( !is_email($comment_author_email))
-					wp_die( __('Error: please enter a valid email address.') );
+					wp_die( __('Error: please enter a valid email address.','filosofo-comments-preview') );
 			}
 			if ( '' == $comment_content )
-				wp_die( __('Error: please type a comment.') );
+				wp_die( __('Error: please type a comment.','filosofo-comments-preview') );
 
 			$commentdata = compact('comment_post_ID', 'comment_author', 'comment_author_email', 'comment_author_url', 'comment_content', 'comment_type', 'user_ID');
 			$fcp_comment_post_ID 		= $comment_post_ID;

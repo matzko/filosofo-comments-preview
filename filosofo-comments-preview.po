@@ -1,77 +1,99 @@
+# Filosofo Comments Preview.
+# Copyright (C) 2007 Austin Matzko
+# This file is distributed under the same license as WordPress.
+# Austin Matzko <if.website@gmail.com>, 2007.
+#
+#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Filosofo Comments Preview 1.0\n"
-"POT-Creation-Date: \n"
-"PO-Revision-Date: 2007-04-03 17:18-0500\n"
-"Last-Translator: Austin Matzko <if.website at gmail.com>\n"
-"Language-Team: Austin Matzko <if.website at gmail.com>\n"
+"Project-Id-Version: 1.0.3\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-12-20 21:27-0500\n"
+"PO-Revision-Date: 2007-12-20 21:27-0500\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Language: English\n"
-"X-Poedit-Country: UNITED STATES\n"
-"X-Poedit-KeywordsList: __;_e\n"
-"X-Poedit-Basepath: .\n"
-"X-Poedit-SearchPath-0: /\n"
 
-#: filosofo-comments-preview.php:74
+#: filosofo-comments-preview.php:78
+msgid "You must submit a comment using the comment form."
+msgstr ""
+
+#: filosofo-comments-preview.php:88
 msgid "Filosofo Comments Preview"
 msgstr ""
 
-#: filosofo-comments-preview.php:74
-#: filosofo-comments-preview.php:87
+#: filosofo-comments-preview.php:88 filosofo-comments-preview.php:102
 msgid "Comments Preview"
 msgstr ""
 
-#: filosofo-comments-preview.php:92
+#: filosofo-comments-preview.php:107
 msgid "Automatic Styling"
 msgstr ""
 
-#: filosofo-comments-preview.php:93
+#: filosofo-comments-preview.php:108
 msgid "This box displays the color for the preview&rsquo;s background."
 msgstr ""
 
-#: filosofo-comments-preview.php:101
-msgid "Set the automatic preview&rsquo;s background color with a <acronym title=\"Cascading Style Sheets\">CSS</acronym> color value.  Clear the input field to disable automatic styling."
+#: filosofo-comments-preview.php:116
+msgid ""
+"Set the automatic preview&rsquo;s background color with a <acronym title="
+"\"Cascading Style Sheets\">CSS</acronym> color value.  Clear the input field "
+"to disable automatic styling."
 msgstr ""
 
-#: filosofo-comments-preview.php:103
-msgid "Automatic styling is disabled. Enter a <acronym title=\"Cascading Style Sheets\">CSS</acronym> color value to style the preview&rsquo;s background color."
+#: filosofo-comments-preview.php:118
+msgid ""
+"Automatic styling is disabled. Enter a <acronym title=\"Cascading Style "
+"Sheets\">CSS</acronym> color value to style the preview&rsquo;s background "
+"color."
 msgstr ""
 
-#: filosofo-comments-preview.php:106
+#: filosofo-comments-preview.php:123
+msgid "Preview Options"
+msgstr ""
+
+#: filosofo-comments-preview.php:124
+msgid "Require commenters to preview before posting?"
+msgstr ""
+
+#: filosofo-comments-preview.php:134
 msgid "Update Options &raquo;"
 msgstr ""
 
-#: filosofo-comments-preview.php:165
+#: filosofo-comments-preview.php:235
 msgid "Previewed comment:"
 msgstr ""
 
-#: filosofo-comments-preview.php:253
+#: filosofo-comments-preview.php:333
 msgid "Preview"
 msgstr ""
 
-#: filosofo-comments-preview.php:263
+#: filosofo-comments-preview.php:343
 msgid "Post"
 msgstr ""
 
-#: filosofo-comments-preview.php:290
+#: filosofo-comments-preview.php:395
+msgid "You must preview the comment before submitting."
+msgstr ""
+
+#: filosofo-comments-preview.php:411
 msgid "Sorry, comments are closed for this item."
 msgstr ""
 
-#: filosofo-comments-preview.php:311
+#: filosofo-comments-preview.php:439
 msgid "Sorry, you must be logged in to post a comment."
 msgstr ""
 
-#: filosofo-comments-preview.php:316
+#: filosofo-comments-preview.php:444
 msgid "Error: please fill the required fields (name, email)."
 msgstr ""
 
-#: filosofo-comments-preview.php:318
+#: filosofo-comments-preview.php:446
 msgid "Error: please enter a valid email address."
 msgstr ""
 
-#: filosofo-comments-preview.php:321
+#: filosofo-comments-preview.php:449
 msgid "Error: please type a comment."
 msgstr ""
-
