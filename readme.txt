@@ -4,7 +4,7 @@ Donate link: http://www.ilfilosofo.com/blog/comments-preview/
 Tags: comments, preview
 Requires at least: 2.0
 Tested up to: 2.3.1
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 
 Filosofo Comments Preview lets you preview WordPress comments before you submit them.
 

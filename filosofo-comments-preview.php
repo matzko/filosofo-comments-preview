@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  
-Version: 1.0.3
+Version: 1.0.4
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/blog/
 */
@@ -367,7 +367,7 @@ class filosofo_cp {
 				'attribs' => array(
 					'type' => 'hidden',
 					'name' => 'preview-check',
-					'value' => $this->create_nonce('filosofo-comments-preview-check'),
+					'value' => $this->create_nonce('filosofo-comments-preview-check' . $_SERVER['REMOTE_ADDR']),
 				),
 			);
 			return $markup;
@@ -391,7 +391,7 @@ class filosofo_cp {
 				add_filter('filosofo-comments-preview_input_array', array(&$this, 'lone_prev_button'), 999);
 			}
 			
-			if ( ! $this->preview_submitted() && $this->post_submitted() && ! $this->check_nonce($_POST['preview-check'],'filosofo-comments-preview-check') ) {
+			if ( ! $this->preview_submitted() && $this->post_submitted() && ! $this->check_nonce($_POST['preview-check'],'filosofo-comments-preview-check' . $_SERVER['REMOTE_ADDR']) ) {
 				wp_die( __('You must preview the comment before submitting.','filosofo-comments-preview') );	
 			}
 		} 
