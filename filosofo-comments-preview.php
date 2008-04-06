@@ -3,12 +3,12 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  
-Version: 1.0.4
+Version: 1.0.5
 Author: Austin Matzko
-Author URI: http://www.ilfilosofo.com/blog/
+Author URI: http://www.ilfilosofo.com/
 */
 
-/*  Copyright 2007  Austin Matzko  (email : if.website at gmail.com)
+/*  Copyright 2008  Austin Matzko  (email : if.website at gmail.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -85,23 +85,37 @@ class filosofo_cp {
 	}
 
 	function menu() {
-		add_options_page(__('Filosofo Comments Preview','filosofo-comments-preview'), __('Comments Preview','filosofo-comments-preview'), 'edit_posts', $this->options_page_id, array(&$this,'options_page'));
+		add_options_page(__('Filosofo Comments Preview','filosofo-comments-preview'), __('Comments Preview','filosofo-comments-preview'), 'manage_options', $this->options_page_id, array(&$this,'options_page'));
 	}
 
 	function options_page() {
+		if ( ! current_user_can('manage_options') ) {
+			return false;
+		}
 		if ( isset( $_POST['comments-preview-updated'] ) ) :
-			if ( '' == $_POST['bgcolor'] ) :
-				update_option('filosofo_cp_styling','NONE');
+			$msg = '';
+			// check nonce
+			if ( ! $this->check_nonce($_REQUEST['comments-preview-nonce'], 'filosofo-comments-preview_save_options') ) :
+				$msg = __('Options not saved.  Please try again.');
 			else :
-				update_option('filosofo_cp_styling','ACTIVE');
+				if ( '' == $_POST['bgcolor'] ) :
+					update_option('filosofo_cp_styling','NONE');
+				else :
+					update_option('filosofo_cp_styling','ACTIVE');
+				endif;
+				update_option('filosofo_cp_bgcolor',$_POST['bgcolor']);
+				update_option('filosofo_cp_req_prev', (int) $_POST['force-preview']);
+				$msg = __('Comments Preview options saved.','filosofo-comments-preview');
 			endif;
-			update_option('filosofo_cp_bgcolor',$_POST['bgcolor']);
-			update_option('filosofo_cp_req_prev', (int) $_POST['force-preview']);
+			if ( ! empty( $msg ) ) :
+				?><div id="message" class="updated fade"><p><?php echo $msg ?></p></div><?php
+			endif;
 		endif;
 		?>
 		<div class="wrap"><h2><?php _e('Comments Preview','filosofo-comments-preview') ?></h2>
 			<form name="preview_styling" method="post" action="?page=<?php 
-			echo $this->options_page_id ?>&amp;updated=true"> 
+			echo $this->options_page_id ?>"> 
+			<input type="hidden" name="comments-preview-nonce" id="comments-preview-nonce" value="<?php echo $this->create_nonce('filosofo-comments-preview_save_options') ?>" />
 			<input type="hidden" name="comments-preview-updated" id="comments-preview-updated" value="true" />
 			<fieldset class="options">
 				<legend><?php _e('Automatic Styling','filosofo-comments-preview') ?></legend>
