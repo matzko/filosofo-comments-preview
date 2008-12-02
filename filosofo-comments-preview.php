@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  
-Version: 1.0.5
+Version: 1.5-alpha
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/
 */
@@ -40,6 +40,7 @@ class filosofo_cp {
 		add_action('comment_form', create_function('$a','global $filosofo_cp_class; ob_end_flush(); $filosofo_cp_class->flush = false;'));
 		// flush if not already done
 		add_action('wp_footer', create_function('$a','global $filosofo_cp_class; if ( true == $filosofo_cp_class->flush ) { ob_end_flush(); $filosofo_cp_class->flush = false; }'));
+		add_action('wp_head', array(&$this,'header_script'));
 		if ( ! $this->older_system() ) 
 			add_filter('comments_array', array(&$this,'add_previewed_comment'));
 		if( isset( $_POST['comment_post_ID'] ) && isset( $_POST['author'] ) ) {
@@ -62,6 +63,14 @@ class filosofo_cp {
 			update_option('filosofo_cp_bgcolor','#FFFF33');
 		}
 		update_option('filosofo_cp_version',$this->version);	
+	}
+	
+	function get_comment_parent_id() {
+		if ( isset( $_REQUEST['comment_parent'] ) ) {
+			return intval($_REQUEST['comment_parent']);
+		} else {
+			return 0;
+		}
 	}
 
 	function is_popup_template() {
@@ -220,7 +229,40 @@ class filosofo_cp {
 		}
 	}
 
-	
+	function header_script() {
+		// scoot the form up underneath the previewed threaded comment, if applicable
+		$parent_id = $this->get_comment_parent_id();
+		if ( $this->preview_submitted() && ! empty( $parent_id ) ) : ?>
+		<script type="text/javascript">
+		// <![CDATA[
+		(function() {
+			var init = function() {
+				try {
+					addComment._premoveForm = function() {
+						var t = this;
+						var respondId = 'respond';
+						var prevID = 'comment-<?php echo $this->preview_comment_id; ?>';	
+						var prevComm = t.I(prevID);
+						var respond = t.I(respondId);
+						t.I('comment_parent').value = <?php echo $parent_id; ?>;
+						prevComm.appendChild(respond);
+					}
+
+					addComment._premoveForm();
+
+				} catch(e) {}
+			}
+
+			if (window.addEventListener)
+				window.addEventListener('load', init, false);
+			else if (window.attachEvent)
+				window.attachEvent('onload', function() { return init.apply(window, new Array(window.event));});
+		})();
+		//]]>
+		</script>
+		<?php 
+		endif;
+	}
 
 	function header_style() {
 		$template = get_template_directory();
@@ -260,7 +302,7 @@ class filosofo_cp {
 			$c['comment_approved'] = 1;
 			$c['comment_agent'] = $_SERVER[HTTP_USER_AGENT];
 			$c['comment_type'] = '';
-			$c['comment_parent'] = 0;
+			$c['comment_parent'] = $this->get_comment_parent_id();
 			$c['user_id'] = $fcp_user_ID;
 			$c['comment_is_preview'] = true;
 			$ca = wp_filter_comment($c); // apply WP pre-save filters
@@ -462,7 +504,8 @@ class filosofo_cp {
 			if ( '' == $comment_content )
 				wp_die( __('Error: please type a comment.','filosofo-comments-preview') );
 
-			$commentdata = compact('comment_post_ID', 'comment_author', 'comment_author_email', 'comment_author_url', 'comment_content', 'comment_type', 'user_ID');
+			$comment_parent = isset($_POST['comment_parent']) ? absint($_POST['comment_parent']) : 0;
+			$commentdata = compact('comment_post_ID', 'comment_author', 'comment_author_email', 'comment_author_url', 'comment_content', 'comment_type', 'comment_parent', 'user_ID');
 			$fcp_comment_post_ID 		= $comment_post_ID;
 			$fcp_comment_author 		= $comment_author;
 			$fcp_comment_author_email	= $comment_author_email;
