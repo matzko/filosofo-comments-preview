@@ -3,7 +3,7 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  
-Version: 1.5-alpha
+Version: 1.5
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/
 */
