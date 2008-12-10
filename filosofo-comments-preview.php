@@ -243,6 +243,14 @@ class filosofo_cp {
 						var respondId = 'respond';
 						var prevID = 'comment-<?php echo $this->preview_comment_id; ?>';	
 						var prevComm = t.I(prevID);
+						// remove reply link from previewed comment
+						try {
+							var divs = prevComm.getElementsByTagName('div');
+							if ( divs )
+								for( var i = 0; i < divs.length; i++ ) 
+									if ( 'reply' == divs[i].className )
+										divs[i].parentNode.removeChild(divs[i]);
+						} catch(e) {}
 						var respond = t.I(respondId);
 						t.I('comment_parent').value = <?php echo $parent_id; ?>;
 						prevComm.appendChild(respond);
@@ -250,7 +258,7 @@ class filosofo_cp {
 
 					addComment._premoveForm();
 
-				} catch(e) {}
+				} catch(e) {console.log(e)}
 			}
 
 			if (window.addEventListener)
@@ -300,10 +308,11 @@ class filosofo_cp {
 			$c['comment_content'] = $fcp_comment_content;
 			$c['comment_karma'] = 0;
 			$c['comment_approved'] = 1;
-			$c['comment_agent'] = $_SERVER[HTTP_USER_AGENT];
+			$c['comment_agent'] = $_SERVER['HTTP_USER_AGENT'];
 			$c['comment_type'] = '';
 			$c['comment_parent'] = $this->get_comment_parent_id();
 			$c['user_id'] = $fcp_user_ID;
+			$c['user_ID'] = $fcp_user_ID;
 			$c['comment_is_preview'] = true;
 			$ca = wp_filter_comment($c); // apply WP pre-save filters
 			foreach ( (array) $ca as $k => $v )
@@ -471,10 +480,10 @@ class filosofo_cp {
 				exit;
 			}
 			
-			$comment_author       = trim($_POST['filosofo_cp_author']);
-			$comment_author_email = trim($_POST['email']);
-			$comment_author_url   = trim($_POST['url']);
-			$comment_content      = trim($_POST['comment']);
+			$comment_author       =  ( ! empty( $_POST['filosofo_cp_author'] ) ) ? trim($_POST['filosofo_cp_author']) : '';
+			$comment_author_email =  ( ! empty( $_POST['email'] ) ) ? trim($_POST['email']) : '';
+			$comment_author_url   =  ( ! empty( $_POST['url'] ) ) ? trim($_POST['url']) : '';
+			$comment_content      =  ( ! empty( $_POST['comment'] ) ) ? trim($_POST['comment']) : '';
 
 			if ( current_user_can('unfiltered_html') ) {
 				if ( $this->create_nonce('unfiltered-html-comment_' . $comment_post_ID) != $_POST['_wp_unfiltered_html_comment'] ) {
@@ -529,13 +538,13 @@ class filosofo_cp {
 				//make logged in users show up in the preview
 				if ( $user_ID ) {
 					$author = $comment_author;
-					$email = addslashes($user_email);
-					$url   = addslashes($user_url);
+					$email = ( ! empty( $user_email ) ) ? addslashes($user_email) : '';
+					$url   = ( ! empty( $user_url ) ) ? addslashes($user_url) : '';
 				}
 				else {
-					$author = $comment_author;
-					$email = addslashes($comment_author_email);
-					$url   = addslashes($comment_author_url);	
+					$author = ( ! empty( $comment_author ) ) ? $comment_author : '';
+					$email = ( ! empty( $comment_author_email ) ) ? addslashes($comment_author_email) : '';
+					$url   = ( ! empty( $comment_author_url ) ) ? addslashes($comment_author_url) : '';	
 				}
 			else : 
 				$comment_id = wp_new_comment( $commentdata );
