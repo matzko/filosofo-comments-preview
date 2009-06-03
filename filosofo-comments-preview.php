@@ -3,12 +3,12 @@
 Plugin Name: Filosofo Comments Preview
 Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  
-Version: 1.5
+Version: 1.6-alpha
 Author: Austin Matzko
 Author URI: http://www.ilfilosofo.com/
 */
 
-/*  Copyright 2008  Austin Matzko  (email : if.website at gmail.com)
+/*  Copyright 2009  Austin Matzko  (email : if.website at gmail.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -633,15 +633,17 @@ if(!function_exists('wp_get_current_commenter')) :
 			$comment_author_url = $_COOKIE['comment_author_url_'.COOKIEHASH];
 		return compact('comment_author', 'comment_author_email', 'comment_author_url');
 	}
-endif;
 
-if ( !function_exists('wp_get_current_user') ) {
-	function wp_get_current_user() {
-		global $current_user;
-		get_currentuserinfo();
-		return $current_user;
+	// define it here to keep from re-defining this pluggable function for versions after 2.0.4
+	if ( !function_exists('wp_get_current_user') ) {
+		function wp_get_current_user() {
+			global $current_user;
+			get_currentuserinfo();
+			return $current_user;
+		}
 	}
-}
+
+endif;
 
 if(!function_exists('filosofo_cp_submitbuttons')) {
 	function filosofo_cp_submitbuttons($variable) {
