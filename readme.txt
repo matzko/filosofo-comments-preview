@@ -3,7 +3,7 @@ Contributors: Austin Matzko, filosofo
 Donate link: http://www.ilfilosofo.com/blog/comments-preview/
 Tags: comments, preview
 Requires at least: 2.0
-Tested up to: 2.9
+Tested up to: 2.9.1
 Stable tag: 1.5
 
 Filosofo Comments Preview lets you preview WordPress comments before you submit them.
