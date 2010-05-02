@@ -1,14 +1,14 @@
 <?php
 /*
 Plugin Name: Filosofo Comments Preview
-Plugin URI: http://www.ilfilosofo.com/blog/comments-preview/
+Plugin URI: http://ilfilosofo.com/blog/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  
-Version: 1.6-alpha
+Version: 1.6
 Author: Austin Matzko
-Author URI: http://www.ilfilosofo.com/
+Author URI: http://ilfilosofo.com/
 */
 
-/*  Copyright 2009  Austin Matzko  (email : if.website at gmail.com)
+/*  Copyright 2010  Austin Matzko  (email : if.website at gmail.com)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -345,7 +345,7 @@ class filosofo_cp {
 		$link = add_query_arg(	
 			(( 'popup' == $this->pagekind ) ? array('comments_popup' => $id ) : array()),
 			get_permalink($id)) . '#comment-' . $this->preview_comment_id;
-		$content = str_replace(array( get_option('siteurl') . '/wp-comments-post.php', '/wp-comments-post.php'), $link, $content);
+		$content = str_replace(array( get_bloginfo('wpurl') . '/wp-comments-post.php', get_option('siteurl') . '/wp-comments-post.php', '/wp-comments-post.php'), $link, $content);
 		if ( !strpos($content,'id="preview"') && strpos($content,'comment_post_ID')) { 
 			// search reversed strings to get last input first
 			$p1 = array('#>/[^>]*("|\')timbus("|\')=eman[^>]*tupni<#i');
