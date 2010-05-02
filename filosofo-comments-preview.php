@@ -525,7 +525,7 @@ class filosofo_cp {
 			if ( !$user_ID ) {
 				setcookie('comment_author_' . COOKIEHASH, $fcp_comment_author, time() + 30000000, COOKIEPATH, COOKIE_DOMAIN);
 				setcookie('comment_author_email_' . COOKIEHASH, $fcp_comment_author_email, time() + 30000000, COOKIEPATH, COOKIE_DOMAIN);
-				setcookie('comment_author_url_' . COOKIEHASH, clean_url($fcp_comment_author_url), time() + 30000000, COOKIEPATH, COOKIE_DOMAIN);
+				setcookie('comment_author_url_' . COOKIEHASH, $this->clean_url($fcp_comment_author_url), time() + 30000000, COOKIEPATH, COOKIE_DOMAIN);
 			}
 			//if someone submits a preview
 			if( $this->preview_submitted() ) :
@@ -556,6 +556,14 @@ class filosofo_cp {
 				exit;
 			endif; //end if someone submits a preview
 		}
+	}
+
+	function clean_url( $t = '' )
+	{
+		if ( function_exists('esc_url') )
+			return esc_url( $t );
+		else
+			return clean_url( $t );
 	}
 } //end filosofo_cp class
 
