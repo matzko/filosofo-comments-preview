@@ -1,14 +1,14 @@
 <?php
 /*
 Plugin Name: Filosofo Comments Preview
-Plugin URI: http://ilfilosofo.com/blog/comments-preview/
+Plugin URI: http://austinmatzko.com/wordpress-plugins/comments-preview/
 Description: Filosofo Comments Preview lets you preview WordPress comments before you submit them.  
 Version: 1.6
 Author: Austin Matzko
-Author URI: http://ilfilosofo.com/
+Author URI: http://austinmatzko.com/
 */
 
-/*  Copyright 2010  Austin Matzko  (email : if.website at gmail.com)
+/*  Copyright 2011  Austin Matzko  ( email : austin -at- pressedcode -dot- com )
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -1,9 +1,9 @@
 === Plugin Name ===
 Contributors: Austin Matzko, filosofo
-Donate link: http://www.ilfilosofo.com/blog/comments-preview/
+Donate link: http://austinmatzko.com/wordpress-plugins/comments-preview/
 Tags: comments, preview
 Requires at least: 2.0
-Tested up to: 2.9.1
+Tested up to: 3.1
 Stable tag: 1.5
 
 Filosofo Comments Preview lets you preview WordPress comments before you submit them.
